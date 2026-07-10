@@ -1,4 +1,24 @@
 package org.apollo.api.model;
 
+import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Entity
+@Table(name = "Company")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class Company {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(name = "name", nullable = false, unique = true, length = 100)
+    private String name;
+
+    @Column(name = "description", columnDefinition = "TEXT")
+    private String description;
 }
