@@ -10,6 +10,7 @@
 
 -
 -
+-
 
 ## API
 
@@ -21,51 +22,57 @@
 
 ### Camadas alteradas
 
-- [ ] Controller
-- [ ] Service
-- [ ] Repository
-- [ ] Entity
-- [ ] DTO
-- [ ] Exception Handler
-- [ ] Configuração
+> Marque os itens alterados substituindo `⬜` por `✅`.
+
+- ⬜ Controller
+- ⬜ Service
+- ⬜ Repository
+- ⬜ Entity
+- ⬜ DTO
+- ⬜ Exception Handler
+- ⬜ Configuração
 
 ## Banco e Integrações
 
-Marque apenas o que foi alterado.
+> Marque apenas o que foi alterado substituindo `⬜` por `✅`.
 
-- [ ] Entidades JPA / PostgreSQL
-- [ ] Migration SQL
-- [ ] Procedure / Function
-- [ ] Swagger/OpenAPI
-- [ ] Spring Security
-- [ ] NoSQL
-- [ ] Não se aplica
+- ⬜ Entidades JPA / PostgreSQL
+- ⬜ Migration SQL
+- ⬜ Procedure / Function
+- ⬜ Swagger/OpenAPI
+- ⬜ Spring Security
+- ⬜ NoSQL
+- ⬜ Não se aplica
 
 ## Testes
 
-Marque o que foi validado.
+> Marque o que foi validado substituindo `⬜` por `✅`.
 
-- [ ] Testes unitários
-- [ ] Testes de integração
-- [ ] Teste manual
-- [ ] Cenários de sucesso e erro
-- [ ] Não se aplica
+- ⬜ Testes unitários
+- ⬜ Testes de integração
+- ⬜ Teste manual
+- ⬜ Cenários de sucesso e erro
+- ⬜ Não se aplica
 
 ## Impacto
 
-- [ ] Front-end
-- [ ] Banco de dados
-- [ ] Documentação (Swagger/OpenAPI)
-- [ ] Infraestrutura/Configuração
-- [ ] Não há impacto externo
+> Marque os impactos aplicáveis substituindo `⬜` por `✅`.
+
+- ⬜ Front-end
+- ⬜ Banco de dados
+- ⬜ Documentação (Swagger/OpenAPI)
+- ⬜ Infraestrutura/Configuração
+- ⬜ Não há impacto externo
 
 ## Checklist
 
-- [ ] Código segue a arquitetura do projeto
-- [ ] Entradas da API possuem validação adequada
-- [ ] Exceções retornam respostas HTTP apropriadas
-- [ ] Documentação (Swagger/OpenAPI) atualizada, quando necessário
-- [ ] Não há secrets, credenciais ou dados sensíveis versionados
+> Marque os itens concluídos substituindo `⬜` por `✅`.
+
+- ⬜ Código segue a arquitetura do projeto
+- ⬜ Entradas da API possuem validação adequada
+- ⬜ Exceções retornam respostas HTTP apropriadas
+- ⬜ Documentação (Swagger/OpenAPI) atualizada, quando necessário
+- ⬜ Não há secrets, credenciais ou dados sensíveis versionados
 
 ## Observações
 
