@@ -1,6 +1,6 @@
 package org.apollo.api.enums;
 
-public enum MaintenanceStatusEnum {
+    public enum MaintenanceStatusEnum {
     ABERTO,
     EM_ANDAMENTO,
     CONCLUIDO,
