@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.apollo.api.dto.CompanyDTO;
 import org.apollo.api.service.CompanyService;
@@ -54,7 +55,7 @@ public class CompanyController {
             @ApiResponse(responseCode = "201", description = "Company created successfully"),
             @ApiResponse(responseCode = "400", description = "Invalid company data")
     })
-    public CompanyDTO create(@RequestBody CompanyDTO dto) {
+    public CompanyDTO create(@Valid @RequestBody CompanyDTO dto) {
         return companyService.create(dto);
     }
 
@@ -65,7 +66,7 @@ public class CompanyController {
             @ApiResponse(responseCode = "400", description = "Invalid company data"),
             @ApiResponse(responseCode = "404", description = "Company not found")
     })
-    public CompanyDTO update(@PathVariable Long id, @RequestBody CompanyDTO dto) {
+    public CompanyDTO update(@PathVariable Long id, @Valid @RequestBody CompanyDTO dto) {
         return companyService.update(id, dto);
     }
 

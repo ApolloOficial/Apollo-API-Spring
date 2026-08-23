@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.apollo.api.dto.UserDTO;
 import org.apollo.api.service.UserService;
@@ -44,7 +45,7 @@ public class UserController {
             @ApiResponse(responseCode = "201", description = "User created successfully"),
             @ApiResponse(responseCode = "400", description = "Invalid user data")
     })
-    public UserDTO create(@RequestBody UserDTO dto) {
+    public UserDTO create(@Valid @RequestBody UserDTO dto) {
         return userService.create(dto);
     }
 
@@ -55,7 +56,7 @@ public class UserController {
             @ApiResponse(responseCode = "400", description = "Invalid user data"),
             @ApiResponse(responseCode = "404", description = "User not found")
     })
-    public UserDTO update(@PathVariable Long id, @RequestBody UserDTO dto) {
+    public UserDTO update(@PathVariable Long id, @Valid @RequestBody UserDTO dto) {
         return userService.update(id, dto);
     }
 

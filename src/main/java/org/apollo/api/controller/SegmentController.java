@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.apollo.api.dto.SegmentDTO;
 import org.apollo.api.service.SegmentService;
@@ -44,7 +45,7 @@ public class SegmentController {
             @ApiResponse(responseCode = "201", description = "Segment created successfully"),
             @ApiResponse(responseCode = "400", description = "Invalid segment data")
     })
-    public SegmentDTO create(@RequestBody SegmentDTO dto) {
+    public SegmentDTO create(@Valid @RequestBody SegmentDTO dto) {
         return segmentService.create(dto);
     }
 
@@ -55,7 +56,7 @@ public class SegmentController {
             @ApiResponse(responseCode = "400", description = "Invalid segment data"),
             @ApiResponse(responseCode = "404", description = "Segment not found")
     })
-    public SegmentDTO update(@PathVariable Long id, @RequestBody SegmentDTO dto) {
+    public SegmentDTO update(@PathVariable Long id, @Valid @RequestBody SegmentDTO dto) {
         return segmentService.update(id, dto);
     }
 

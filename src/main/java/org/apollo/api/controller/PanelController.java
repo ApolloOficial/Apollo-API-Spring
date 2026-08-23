@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.apollo.api.dto.PanelDTO;
 import org.apollo.api.service.PanelService;
@@ -42,7 +43,7 @@ public class PanelController {
             @ApiResponse(responseCode = "200", description = "Panel created successfully"),
             @ApiResponse(responseCode = "404", description = "Batch not found")
     })
-    public PanelDTO create(@RequestBody PanelDTO dto) {
+    public PanelDTO create(@Valid @RequestBody PanelDTO dto) {
         return panelService.create(dto);
     }
 
@@ -52,7 +53,7 @@ public class PanelController {
             @ApiResponse(responseCode = "200", description = "Panel updated successfully"),
             @ApiResponse(responseCode = "404", description = "Panel or batch not found")
     })
-    public PanelDTO update(@PathVariable Long id, @RequestBody PanelDTO dto) {
+    public PanelDTO update(@PathVariable Long id, @Valid @RequestBody PanelDTO dto) {
         return panelService.update(id, dto);
     }
 

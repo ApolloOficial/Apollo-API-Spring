@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.apollo.api.dto.BatchDTO;
 import org.apollo.api.service.BatchService;
@@ -39,7 +40,7 @@ public class BatchController {
     @PostMapping
     @Operation(summary = "Create batch")
     @ApiResponse(responseCode = "200", description = "Batch created successfully")
-    public BatchDTO create(@RequestBody BatchDTO dto) {
+    public BatchDTO create(@Valid @RequestBody BatchDTO dto) {
         return batchService.create(dto);
     }
 
@@ -49,7 +50,7 @@ public class BatchController {
             @ApiResponse(responseCode = "200", description = "Batch updated successfully"),
             @ApiResponse(responseCode = "404", description = "Batch not found")
     })
-    public BatchDTO update(@PathVariable Long id, @RequestBody BatchDTO dto) {
+    public BatchDTO update(@PathVariable Long id, @Valid @RequestBody BatchDTO dto) {
         return batchService.update(id, dto);
     }
 

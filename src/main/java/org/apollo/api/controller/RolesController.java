@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.apollo.api.dto.RolesDTO;
 import org.apollo.api.service.RolesService;
@@ -44,7 +45,7 @@ public class RolesController {
             @ApiResponse(responseCode = "201", description = "Role created successfully"),
             @ApiResponse(responseCode = "400", description = "Invalid role data")
     })
-    public RolesDTO create(@RequestBody RolesDTO dto) {
+    public RolesDTO create(@Valid @RequestBody RolesDTO dto) {
         return rolesService.create(dto);
     }
 
@@ -55,7 +56,7 @@ public class RolesController {
             @ApiResponse(responseCode = "400", description = "Invalid role data"),
             @ApiResponse(responseCode = "404", description = "Role not found")
     })
-    public RolesDTO update(@PathVariable Long id, @RequestBody RolesDTO dto) {
+    public RolesDTO update(@PathVariable Long id, @Valid @RequestBody RolesDTO dto) {
         return rolesService.update(id, dto);
     }
 
