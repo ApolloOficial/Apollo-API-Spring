@@ -6,6 +6,7 @@ import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import org.apollo.api.model.User;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
@@ -38,16 +39,15 @@ public class JwtService {
         this.audience = audience;
     }
 
-    public String generateToken(User user) {
+    public String generateToken(UserDetails userDetails) {
         Date issuedAt = new Date();
-        Date expiration = new Date(issuedAt.getTime() + expirationMs);
 
         return Jwts.builder()
-                .subject(user.getUsername())
+                .subject(userDetails.getUsername())
                 .issuer(issuer)
                 .audience().add(audience).and()
                 .issuedAt(issuedAt)
-                .expiration(expiration)
+                .expiration(new Date(issuedAt.getTime() + expirationMs))
                 .signWith(signingKey)
                 .compact();
     }

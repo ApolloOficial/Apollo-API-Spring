@@ -21,47 +21,53 @@ public class PanelController {
     private final PanelService panelService;
 
     @GetMapping
-    @Operation(summary = "List panels")
-    @ApiResponse(responseCode = "200", description = "Panels returned successfully")
+    @Operation(summary = "Listar painéis")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Painéis retornados com sucesso"),
+            @ApiResponse(responseCode = "401", description = "Token ausente ou inválido")
+    })
     public List<PanelDTO> findAll() {
         return panelService.findAll();
     }
 
     @GetMapping("/{id}")
-    @Operation(summary = "Find panel by ID")
+    @Operation(summary = "Buscar painel por identificador")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Panel returned successfully"),
-            @ApiResponse(responseCode = "404", description = "Panel not found")
+            @ApiResponse(responseCode = "200", description = "Painel retornado com sucesso"),
+            @ApiResponse(responseCode = "401", description = "Token ausente ou inválido"),
+            @ApiResponse(responseCode = "404", description = "Painel não encontrado")
     })
     public PanelDTO findById(@PathVariable Long id) {
         return panelService.findById(id);
     }
 
     @PostMapping
-    @Operation(summary = "Create panel")
+    @Operation(summary = "Criar painel")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Panel created successfully"),
-            @ApiResponse(responseCode = "404", description = "Batch not found")
+            @ApiResponse(responseCode = "200", description = "Painel criado com sucesso"),
+            @ApiResponse(responseCode = "401", description = "Token ausente ou inválido")
     })
     public PanelDTO create(@Valid @RequestBody PanelDTO dto) {
         return panelService.create(dto);
     }
 
     @PutMapping("/{id}")
-    @Operation(summary = "Update panel")
+    @Operation(summary = "Atualizar painel")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Panel updated successfully"),
-            @ApiResponse(responseCode = "404", description = "Panel or batch not found")
+            @ApiResponse(responseCode = "200", description = "Painel atualizado com sucesso"),
+            @ApiResponse(responseCode = "401", description = "Token ausente ou inválido"),
+            @ApiResponse(responseCode = "404", description = "Painel não encontrado")
     })
     public PanelDTO update(@PathVariable Long id, @Valid @RequestBody PanelDTO dto) {
         return panelService.update(id, dto);
     }
 
     @DeleteMapping("/{id}")
-    @Operation(summary = "Delete panel")
+    @Operation(summary = "Excluir painel")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Panel deleted successfully"),
-            @ApiResponse(responseCode = "404", description = "Panel not found")
+            @ApiResponse(responseCode = "200", description = "Painel excluído com sucesso"),
+            @ApiResponse(responseCode = "401", description = "Token ausente ou inválido"),
+            @ApiResponse(responseCode = "404", description = "Painel não encontrado")
     })
     public void delete(@PathVariable Long id) {
         panelService.delete(id);

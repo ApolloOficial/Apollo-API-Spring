@@ -1,5 +1,10 @@
 package org.apollo.api.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.apollo.api.dto.LoginRequestDTO;
 import org.apollo.api.dto.LoginResponseDTO;
@@ -17,7 +22,13 @@ public class AuthController {
     private final AuthService authService;
 
     @PostMapping("/login")
-    public LoginResponseDTO login(@RequestBody LoginRequestDTO request) {
+    @Operation(summary = "Autenticar usuário e emitir token JWT")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Token JWT emitido com sucesso"),
+            @ApiResponse(responseCode = "400", description = "Dados de login inválidos"),
+            @ApiResponse(responseCode = "401", description = "Credenciais inválidas")
+    })
+    public LoginResponseDTO login(@Valid @RequestBody LoginRequestDTO request) {
         return authService.login(request);
     }
 }
