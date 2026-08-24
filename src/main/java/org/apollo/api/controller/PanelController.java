@@ -14,7 +14,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/panels")
 @RequiredArgsConstructor
-@Tag(name = "Painéis", description = "Operações de gerenciamento de painéis")
+@Tag(name = "Panel", description = "Panel management operations")
 public class PanelController {
 
     private final PanelService panelService;
