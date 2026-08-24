@@ -33,12 +33,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             HttpServletResponse response,
             FilterChain filterChain
     ) throws ServletException, IOException {
+
         String authorizationHeader = request.getHeader(AUTHORIZATION_HEADER);
 
         if (authorizationHeader != null
                 && authorizationHeader.startsWith(BEARER_PREFIX)
                 && SecurityContextHolder.getContext().getAuthentication() == null) {
-            authenticate(authorizationHeader.substring(BEARER_PREFIX.length()), request);
+
+            String token = authorizationHeader.substring(BEARER_PREFIX.length());
+
+            authenticate(token, request);
         }
 
         filterChain.doFilter(request, response);
@@ -47,19 +51,28 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private void authenticate(String token, HttpServletRequest request) {
         try {
             String email = jwtService.extractSubject(token);
-            userRepository.findByEmail(email).ifPresent(user -> setAuthentication(user, request));
+
+            userRepository.findByEmail(email)
+                    .ifPresent(user -> setAuthentication(user, request));
+
         } catch (JwtException | IllegalArgumentException exception) {
             SecurityContextHolder.clearContext();
         }
     }
 
     private void setAuthentication(User user, HttpServletRequest request) {
-        UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                user,
-                null,
-                user.getAuthorities()
+
+        UsernamePasswordAuthenticationToken authentication =
+                new UsernamePasswordAuthenticationToken(
+                        user,
+                        null,
+                        user.getAuthorities()
+                );
+
+        authentication.setDetails(
+                new WebAuthenticationDetailsSource().buildDetails(request)
         );
-        authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+
         SecurityContextHolder.getContext().setAuthentication(authentication);
     }
 }
