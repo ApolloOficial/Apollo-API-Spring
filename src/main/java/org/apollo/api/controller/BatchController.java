@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.apollo.api.dto.BatchDTO;
 import org.apollo.api.service.BatchService;
@@ -46,7 +47,7 @@ public class BatchController {
             @ApiResponse(responseCode = "200", description = "Lote criado com sucesso"),
             @ApiResponse(responseCode = "401", description = "Token ausente ou inválido")
     })
-    public BatchDTO create(@RequestBody BatchDTO dto) {
+    public BatchDTO create(@Valid @RequestBody BatchDTO dto) {
         return batchService.create(dto);
     }
 
@@ -57,7 +58,7 @@ public class BatchController {
             @ApiResponse(responseCode = "401", description = "Token ausente ou inválido"),
             @ApiResponse(responseCode = "404", description = "Lote não encontrado")
     })
-    public BatchDTO update(@PathVariable Long id, @RequestBody BatchDTO dto) {
+    public BatchDTO update(@PathVariable Long id, @Valid @RequestBody BatchDTO dto) {
         return batchService.update(id, dto);
     }
 

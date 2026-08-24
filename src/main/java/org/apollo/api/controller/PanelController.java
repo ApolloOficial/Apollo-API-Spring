@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.apollo.api.dto.PanelDTO;
 import org.apollo.api.service.PanelService;
@@ -46,7 +47,7 @@ public class PanelController {
             @ApiResponse(responseCode = "200", description = "Painel criado com sucesso"),
             @ApiResponse(responseCode = "401", description = "Token ausente ou inválido")
     })
-    public PanelDTO create(@RequestBody PanelDTO dto) {
+    public PanelDTO create(@Valid @RequestBody PanelDTO dto) {
         return panelService.create(dto);
     }
 
@@ -57,7 +58,7 @@ public class PanelController {
             @ApiResponse(responseCode = "401", description = "Token ausente ou inválido"),
             @ApiResponse(responseCode = "404", description = "Painel não encontrado")
     })
-    public PanelDTO update(@PathVariable Long id, @RequestBody PanelDTO dto) {
+    public PanelDTO update(@PathVariable Long id, @Valid @RequestBody PanelDTO dto) {
         return panelService.update(id, dto);
     }
 
