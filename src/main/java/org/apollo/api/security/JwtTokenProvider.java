@@ -2,6 +2,7 @@ package org.apollo.api.security;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.GrantedAuthority;
@@ -15,20 +16,27 @@ import java.util.stream.Collectors;
 @Component
 public class JwtTokenProvider {
 
-    @Value("${app.security.jwt.secret}")
+    @Value("${apollo.jwt.secret}")
     private String jwtSecret;
 
-    @Value("${app.security.jwt.expiration:86400000}")
+    @Value("${apollo.jwt.expiration:86400000}")
     private long jwtExpirationMs;
 
+    @Value("${apollo.jwt.issuer}")
+    private String issuer;
+
+    @Value("${apollo.jwt.audience}")
+    private String audience;
+
     private SecretKey getSigningKey() {
-        byte[] keyBytes = jwtSecret.getBytes();
-        return Keys.hmacShaKeyFor(keyBytes);
-    } // Cria chave criptográfica
+        return Keys.hmacShaKeyFor(Decoders.BASE64.decode(jwtSecret));
+    }
 
     public String generateToken(UserDetails userDetails) {
         return Jwts.builder()
                 .subject(userDetails.getUsername())
+                .issuer(issuer)
+                .audience().add(audience).and()
                 .claim("roles", userDetails.getAuthorities().stream()
                         .map(GrantedAuthority::getAuthority)
                         .collect(Collectors.toList()))

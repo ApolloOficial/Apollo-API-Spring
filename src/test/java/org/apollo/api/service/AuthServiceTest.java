@@ -2,8 +2,6 @@ package org.apollo.api.service;
 
 import org.apollo.api.dto.LoginRequestDTO;
 import org.apollo.api.dto.LoginResponseDTO;
-import org.apollo.api.repository.UserRepository;
-import org.apollo.api.security.JwtTokenProvider;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -17,7 +15,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
@@ -34,15 +31,6 @@ class AuthServiceTest {
     private AuthenticationManager authenticationManager;
 
     @Mock
-    private JwtTokenProvider jwtTokenProvider;
-
-    @Mock
-    private UserRepository userRepository;
-
-    @Mock
-    private PasswordEncoder passwordEncoder;
-
-    @Mock
     private JwtService jwtService;
 
     @InjectMocks
@@ -50,17 +38,28 @@ class AuthServiceTest {
 
     @Test
     void shouldReturnBearerTokenWhenCredentialsAreValid() {
-        LoginRequestDTO request = new LoginRequestDTO("admin@apollo.com", "password");
+        LoginRequestDTO request = new LoginRequestDTO(
+                "admin@apollo.com",
+                "password"
+        );
+
         UserDetails user = new User(
                 "admin@apollo.com",
                 "encoded-password",
-                List.of(new SimpleGrantedAuthority("ROLE_ADMINISTRATOR"))
+                List.of(new SimpleGrantedAuthority("ROLE_ADMIN"))
         );
-        Authentication authentication = new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
+
+        Authentication authentication = new UsernamePasswordAuthenticationToken(
+                user,
+                null,
+                user.getAuthorities()
+        );
 
         when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
                 .thenReturn(authentication);
-        when(jwtTokenProvider.generateToken(user)).thenReturn("generated-token");
+
+        when(jwtService.generateToken(user))
+                .thenReturn("generated-token");
 
         LoginResponseDTO response = authService.login(request);
 
@@ -70,7 +69,10 @@ class AuthServiceTest {
 
     @Test
     void shouldReturnUnauthorizedWhenCredentialsAreInvalid() {
-        LoginRequestDTO request = new LoginRequestDTO("admin@apollo.com", "wrong-password");
+        LoginRequestDTO request = new LoginRequestDTO(
+                "admin@apollo.com",
+                "wrong-password"
+        );
 
         when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
                 .thenThrow(new BadCredentialsException("Invalid credentials"));
