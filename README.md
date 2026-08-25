@@ -30,13 +30,13 @@ endereços, usuários, perfis de acesso, segmentos e manutenções.
 ## Funcionalidades atuais
 
 - Cadastro, consulta, atualização e exclusão de lotes de painéis;
-- cadastro, consulta, atualização e exclusão de painéis solares;
-- associação de cada painel ao seu lote de origem;
-- persistência em banco de dados PostgreSQL com Spring Data JPA;
-- conversão entre entidades e DTOs na camada de serviço;
-- resposta HTTP `404 Not Found` centralizada para recursos inexistentes;
-- criação e atualização automática do esquema pelo Hibernate;
-- ambiente PostgreSQL reproduzível com Docker Compose.
+- Cadastro, consulta, atualização e exclusão de painéis solares;
+- Associação de cada painel ao seu lote de origem;
+- Persistência em banco de dados PostgreSQL com Spring Data JPA;
+- Conversão entre entidades e DTOs na camada de serviço;
+- Resposta HTTP `404 Not Found` centralizada para recursos inexistentes;
+- Criação e atualização automática do esquema pelo Hibernate;
+- Ambiente PostgreSQL reproduzível com Docker Compose.
 
 ## Arquitetura
 
