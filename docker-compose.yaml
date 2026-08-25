@@ -4,18 +4,38 @@ services:
     container_name: apollo-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: apollo
-      POSTGRES_PASSWORD: apollo123
-      POSTGRES_DB: dbapollo
+      POSTGRES_USER: ${DB_USER:-apollo}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-apollo123}
+      POSTGRES_DB: ${DB_NAME:-dbapollo}
     ports:
-      - "5432:5432"
+      - "${DB_PORT:-5432}:5432"
     volumes:
       - apollo_postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U apollo"]
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 10s
       timeout: 5s
       retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: apollo-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-dbapollo}
+      DB_USER: ${DB_USER:-apollo}
+      DB_PASSWORD: ${DB_PASSWORD:-apollo123}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set}
+      JWT_EXPIRATION_MS: ${JWT_EXPIRATION_MS:-86400000}
+    ports:
+      - "${API_PORT:-8080}:8080"
 
 volumes:
   apollo_postgres_data:
