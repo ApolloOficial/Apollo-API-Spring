@@ -35,4 +35,8 @@ public class UserDTO {
     @NotBlank(message = "CPF é obrigatório")
     @Pattern(regexp = "^[0-9]{11}$", message = "CPF deve conter exatamente 11 dígitos")
     private String cpf;
+
+    @NotBlank(message = "Senha é obrigatória")
+    @Size(min = 8, message = "Senha deve ter no mínimo 8 caracteres")
+    private String password;
 }
