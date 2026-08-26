@@ -42,8 +42,12 @@ public class UserService {
         Roles role = rolesRepository.findById(dto.getRoleId())
                 .orElseThrow(() -> new ResourceNotFoundException("Perfil não encontrado: " + dto.getRoleId()));
 
-        User user = toEntity(dto, role);
-        user.setPassword(passwordEncoder.encode("changeme"));
+        User user = new User();
+        user.setFullName(dto.getFullName());
+        user.setEmail(dto.getEmail());
+        user.setCpf(dto.getCpf());
+        user.setRole(role);
+
         return toDTO(userRepository.save(user));
     }
 

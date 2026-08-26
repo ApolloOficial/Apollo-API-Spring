@@ -35,6 +35,7 @@ public class MaintenanceRegister {
     private String technicalReport;
 
     @Column(name = "maintenance_status", nullable = false, length = 30)
+    @Enumerated(EnumType.STRING)
     private MaintenanceStatusEnum maintenanceStatus;
 
     @Column(name = "opening_dt", nullable = false)
