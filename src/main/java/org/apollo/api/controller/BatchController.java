@@ -1,11 +1,15 @@
 package org.apollo.api.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.apollo.api.exception.ErrorResponse;
 import org.apollo.api.dto.BatchDTO;
 import org.apollo.api.service.BatchService;
 import org.springframework.web.bind.annotation.*;
@@ -24,7 +28,9 @@ public class BatchController {
     @Operation(summary = "Listar lotes")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Lotes retornados com sucesso"),
-            @ApiResponse(responseCode = "401", description = "Token ausente ou inválido")
+            @ApiResponse(responseCode = "401", description = "Token ausente ou inválido",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(value = "{\"status\": 401, \"message\": \"Token ausente ou inválido\"}")))
     })
     public List<BatchDTO> findAll() {
         return batchService.findAll();
@@ -34,8 +40,12 @@ public class BatchController {
     @Operation(summary = "Buscar lote por identificador")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Lote retornado com sucesso"),
-            @ApiResponse(responseCode = "401", description = "Token ausente ou inválido"),
-            @ApiResponse(responseCode = "404", description = "Lote não encontrado")
+            @ApiResponse(responseCode = "401", description = "Token ausente ou inválido",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(value = "{\"status\": 401, \"message\": \"Token ausente ou inválido\"}"))),
+            @ApiResponse(responseCode = "404", description = "Lote não encontrado",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(value = "{\"status\": 404, \"message\": \"Lote não encontrado: 1\"}")))
     })
     public BatchDTO findById(@PathVariable Long id) {
         return batchService.findById(id);
@@ -45,7 +55,9 @@ public class BatchController {
     @Operation(summary = "Criar lote")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Lote criado com sucesso"),
-            @ApiResponse(responseCode = "401", description = "Token ausente ou inválido")
+            @ApiResponse(responseCode = "401", description = "Token ausente ou inválido",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(value = "{\"status\": 401, \"message\": \"Token ausente ou inválido\"}")))
     })
     public BatchDTO create(@Valid @RequestBody BatchDTO dto) {
         return batchService.create(dto);
@@ -55,8 +67,12 @@ public class BatchController {
     @Operation(summary = "Atualizar lote")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Lote atualizado com sucesso"),
-            @ApiResponse(responseCode = "401", description = "Token ausente ou inválido"),
-            @ApiResponse(responseCode = "404", description = "Lote não encontrado")
+            @ApiResponse(responseCode = "401", description = "Token ausente ou inválido",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(value = "{\"status\": 401, \"message\": \"Token ausente ou inválido\"}"))),
+            @ApiResponse(responseCode = "404", description = "Lote não encontrado",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(value = "{\"status\": 404, \"message\": \"Lote não encontrado: 1\"}")))
     })
     public BatchDTO update(@PathVariable Long id, @Valid @RequestBody BatchDTO dto) {
         return batchService.update(id, dto);
@@ -66,8 +82,12 @@ public class BatchController {
     @Operation(summary = "Excluir lote")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Lote excluído com sucesso"),
-            @ApiResponse(responseCode = "401", description = "Token ausente ou inválido"),
-            @ApiResponse(responseCode = "404", description = "Lote não encontrado")
+            @ApiResponse(responseCode = "401", description = "Token ausente ou inválido",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(value = "{\"status\": 401, \"message\": \"Token ausente ou inválido\"}"))),
+            @ApiResponse(responseCode = "404", description = "Lote não encontrado",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(value = "{\"status\": 404, \"message\": \"Lote não encontrado: 1\"}")))
     })
     public void delete(@PathVariable Long id) {
         batchService.delete(id);
