@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.apollo.api.dto.AdministratorCreateDTO;
 import org.apollo.api.dto.UserDTO;
 import org.apollo.api.service.UserService;
 import org.springframework.http.HttpStatus;
@@ -45,7 +46,7 @@ public class UserController {
             @ApiResponse(responseCode = "201", description = "User created successfully"),
             @ApiResponse(responseCode = "400", description = "Invalid user data")
     })
-    public UserDTO create(@Valid @RequestBody UserDTO dto) {
+    public UserDTO create(@Valid @RequestBody AdministratorCreateDTO dto) {
         return userService.create(dto);
     }
 

@@ -29,7 +29,7 @@ public class PanelDTO {
 
     @NotNull(message = "Unidade é obrigatória")
     @Positive(message = "Unidade deve ser válida")
-    private Integer coUnityId;
+    private Long coUnityId;
 
     @NotNull(message = "Ciclo de vida estimado é obrigatório")
     @Min(value = 1, message = "Ciclo de vida estimado deve ser de pelo menos 1 ano")
@@ -52,6 +52,5 @@ public class PanelDTO {
     @DecimalMax(value = "100.00", message = "Eficiência nominal deve ser menor ou igual a 100")
     private BigDecimal ratedEfficiency;
 
-    @NotNull(message = "Data de instalação é obrigatória")
     private LocalDate installationDt;
 }

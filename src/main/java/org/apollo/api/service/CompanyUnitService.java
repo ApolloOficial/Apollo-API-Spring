@@ -5,11 +5,15 @@ import org.apollo.api.dto.AddressDTO;
 import org.apollo.api.dto.CompanyUnitDTO;
 import org.apollo.api.exception.ResourceNotFoundException;
 import org.apollo.api.model.Address;
+import org.apollo.api.model.Company;
 import org.apollo.api.model.CompanyUnit;
 import org.apollo.api.model.Segment;
+import org.apollo.api.repository.CompanyRepository;
 import org.apollo.api.repository.CompanyUnitRepository;
 import org.apollo.api.repository.SegmentRepository;
+import org.apollo.api.security.TenantContext;
 import org.springframework.stereotype.Service;
+
 import java.time.LocalDate;
 import java.util.List;
 
@@ -19,79 +23,76 @@ public class CompanyUnitService {
 
     private final CompanyUnitRepository companyUnitRepository;
     private final SegmentRepository segmentRepository;
+    private final CompanyRepository companyRepository;
+    private final TenantContext tenantContext;
 
     public List<CompanyUnitDTO> findAll() {
-        return companyUnitRepository.findAll().stream()
-                .map(this::toDTO)
-                .toList();
+        return companyUnitRepository.findAllByCompanyId(companyId()).stream().map(this::toDTO).toList();
     }
 
     public CompanyUnitDTO findById(Long id) {
-        CompanyUnit unit = companyUnitRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Unidade não encontrada: " + id));
-        return toDTO(unit);
+        return toDTO(findUnit(id));
     }
 
     public List<CompanyUnitDTO> findBySegmentId(Long segmentId) {
         if (!segmentRepository.existsById(segmentId)) {
             throw new ResourceNotFoundException("Segmento não encontrado: " + segmentId);
         }
-        return companyUnitRepository.findBySegmentId(segmentId).stream()
+        return companyUnitRepository.findBySegmentIdAndCompanyId(segmentId, companyId()).stream()
                 .map(this::toDTO)
                 .toList();
     }
 
     public CompanyUnitDTO create(CompanyUnitDTO dto) {
-        Segment segment = segmentRepository.findById(dto.getSegmentId())
-                .orElseThrow(() -> new ResourceNotFoundException("Segmento não encontrado: " + dto.getSegmentId()));
+        Company company = companyRepository.findById(companyId())
+                .orElseThrow(() -> new ResourceNotFoundException("Empresa não encontrada: " + companyId()));
+        Segment segment = findSegment(dto.getSegmentId());
 
         CompanyUnit unit = new CompanyUnit();
+        unit.setCompany(company);
         unit.setSegment(segment);
         unit.setAddress(toAddressEntity(dto.getAddress()));
-        unit.setName(dto.getName());
         unit.setCreatedAt(LocalDate.now());
-        unit.setEmail(dto.getEmail());
-        unit.setPhone(dto.getPhone());
-
-        // cascade = CascadeType.ALL no relacionamento com Address salva o endereço junto
+        updateFields(unit, dto);
         return toDTO(companyUnitRepository.save(unit));
     }
 
     public CompanyUnitDTO update(Long id, CompanyUnitDTO dto) {
-        CompanyUnit unit = companyUnitRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Unidade não encontrada: " + id));
-
-        Segment segment = segmentRepository.findById(dto.getSegmentId())
-                .orElseThrow(() -> new ResourceNotFoundException("Segmento não encontrado: " + dto.getSegmentId()));
-
-        Address address = unit.getAddress();
-        address.setStreetName(dto.getAddress().getStreetName());
-        address.setNumber(dto.getAddress().getNumber());
-        address.setAdditionalInfo(dto.getAddress().getAdditionalInfo());
-        address.setNeighborhood(dto.getAddress().getNeighborhood());
-        address.setCity(dto.getAddress().getCity());
-        address.setState(dto.getAddress().getState());
-        address.setZipCode(dto.getAddress().getZipCode());
-
-        unit.setSegment(segment);
-        unit.setName(dto.getName());
-        unit.setEmail(dto.getEmail());
-        unit.setPhone(dto.getPhone());
-
-        // cascade = CascadeType.ALL propaga o update do endereço junto com a unidade
+        CompanyUnit unit = findUnit(id);
+        unit.setSegment(findSegment(dto.getSegmentId()));
+        updateAddress(unit.getAddress(), dto.getAddress());
+        updateFields(unit, dto);
         return toDTO(companyUnitRepository.save(unit));
     }
 
     public void delete(Long id) {
-        if (!companyUnitRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Unidade não encontrada: " + id);
-        }
-        companyUnitRepository.deleteById(id);
+        companyUnitRepository.delete(findUnit(id));
+    }
+
+    private CompanyUnit findUnit(Long id) {
+        return companyUnitRepository.findByIdAndCompanyId(id, companyId())
+                .orElseThrow(() -> new ResourceNotFoundException("Unidade não encontrada: " + id));
+    }
+
+    private Segment findSegment(Long segmentId) {
+        return segmentRepository.findById(segmentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Segmento não encontrado: " + segmentId));
+    }
+
+    private Long companyId() {
+        return tenantContext.getCompanyId();
+    }
+
+    private void updateFields(CompanyUnit unit, CompanyUnitDTO dto) {
+        unit.setName(dto.getName());
+        unit.setEmail(dto.getEmail());
+        unit.setPhone(dto.getPhone());
     }
 
     private CompanyUnitDTO toDTO(CompanyUnit unit) {
         return new CompanyUnitDTO(
                 unit.getId(),
+                unit.getCompany().getId(),
                 unit.getSegment().getId(),
                 unit.getSegment().getName(),
                 toAddressDTO(unit.getAddress()),
@@ -104,6 +105,11 @@ public class CompanyUnitService {
 
     private Address toAddressEntity(AddressDTO dto) {
         Address address = new Address();
+        updateAddress(address, dto);
+        return address;
+    }
+
+    private void updateAddress(Address address, AddressDTO dto) {
         address.setStreetName(dto.getStreetName());
         address.setNumber(dto.getNumber());
         address.setAdditionalInfo(dto.getAdditionalInfo());
@@ -111,19 +117,11 @@ public class CompanyUnitService {
         address.setCity(dto.getCity());
         address.setState(dto.getState());
         address.setZipCode(dto.getZipCode());
-        return address;
     }
 
     private AddressDTO toAddressDTO(Address address) {
-        return new AddressDTO(
-                address.getId(),
-                address.getStreetName(),
-                address.getNumber(),
-                address.getAdditionalInfo(),
-                address.getNeighborhood(),
-                address.getCity(),
-                address.getState(),
-                address.getZipCode()
-        );
+        return new AddressDTO(address.getId(), address.getStreetName(), address.getNumber(),
+                address.getAdditionalInfo(), address.getNeighborhood(), address.getCity(),
+                address.getState(), address.getZipCode());
     }
 }

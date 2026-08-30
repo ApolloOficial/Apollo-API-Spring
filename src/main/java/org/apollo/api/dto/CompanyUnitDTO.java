@@ -1,5 +1,7 @@
 package org.apollo.api.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -15,6 +17,9 @@ import java.time.LocalDate;
 public class CompanyUnitDTO {
 
     private Long id;
+
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    private Long companyId;
 
     @NotNull(message = "Segmento é obrigatório")
     private Long segmentId;

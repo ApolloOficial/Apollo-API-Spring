@@ -18,6 +18,10 @@ public class CompanyUnit {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "company_id", nullable = false)
+    private Company company;
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "segment_id", nullable = false)
     private Segment segment;
 
@@ -34,6 +38,6 @@ public class CompanyUnit {
     @Column(name = "email", nullable = false, length = 100)
     private String email;
 
-    @Column(name = "phone", nullable = false, length = 11)
+    @Column(name = "phone", nullable = false, length = 20)
     private String phone;
 }

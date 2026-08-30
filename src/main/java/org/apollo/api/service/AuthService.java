@@ -3,14 +3,11 @@ package org.apollo.api.service;
 import lombok.RequiredArgsConstructor;
 import org.apollo.api.dto.LoginRequestDTO;
 import org.apollo.api.dto.LoginResponseDTO;
+import org.apollo.api.repository.AuthUserRepository;
+import org.apollo.api.security.AuthenticatedUser;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
 import org.springframework.web.server.ResponseStatusException;
 
 @Service
@@ -19,40 +16,25 @@ public class AuthService {
 
     private static final String INVALID_CREDENTIALS_MESSAGE = "Credenciais inválidas";
 
-    private final AuthenticationManager authenticationManager;
+    private final AuthUserRepository authUserRepository;
+    private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
 
     public LoginResponseDTO login(LoginRequestDTO request) {
-        if (request == null
-                || !StringUtils.hasText(request.getEmail())
-                || !StringUtils.hasText(request.getPassword())) {
+        var matchingUsers = authUserRepository
+                .findActiveByCompanyIdAndEmail(request.getCompanyId(), request.getEmail())
+                .stream()
+                .filter(authUser -> passwordEncoder.matches(request.getPassword(), authUser.getPassword()))
+                .map(AuthenticatedUser::new)
+                .toList();
+
+        if (matchingUsers.size() != 1) {
             throw invalidCredentials();
         }
-
-        try {
-            Authentication authentication = authenticationManager.authenticate(
-                    UsernamePasswordAuthenticationToken.unauthenticated(
-                            request.getEmail(),
-                            request.getPassword()
-                    )
-            );
-
-            if (!(authentication.getPrincipal() instanceof UserDetails userDetails)) {
-                throw invalidCredentials();
-            }
-
-            String token = jwtService.generateToken(userDetails);
-
-            return new LoginResponseDTO(token, "Bearer");
-        } catch (AuthenticationException exception) {
-            throw invalidCredentials();
-        }
+        return new LoginResponseDTO(jwtService.generateToken(matchingUsers.getFirst()), "Bearer");
     }
 
     private ResponseStatusException invalidCredentials() {
-        return new ResponseStatusException(
-                HttpStatus.UNAUTHORIZED,
-                INVALID_CREDENTIALS_MESSAGE
-        );
+        return new ResponseStatusException(HttpStatus.UNAUTHORIZED, INVALID_CREDENTIALS_MESSAGE);
     }
 }
