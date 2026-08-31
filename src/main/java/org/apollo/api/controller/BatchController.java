@@ -3,6 +3,7 @@ package org.apollo.api.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +17,7 @@ import java.util.List;
 @RequestMapping("/api/v1/batches")
 @RequiredArgsConstructor
 @Tag(name = "Lotes", description = "Operações de gerenciamento de lotes")
+@SecurityRequirement(name = "bearer-key")
 public class BatchController {
 
     private final BatchService batchService;
