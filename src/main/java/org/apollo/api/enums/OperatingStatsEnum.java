@@ -4,5 +4,6 @@ public enum OperatingStatsEnum {
     Operacional,
     Manutenção,
     Inativo,
-    Falha
+    Falha,
+    EM_ESTOQUE
 }
