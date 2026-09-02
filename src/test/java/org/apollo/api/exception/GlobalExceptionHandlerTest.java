@@ -3,6 +3,8 @@ package org.apollo.api.exception;
 import org.junit.jupiter.api.Test;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.server.ResponseStatusException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -18,5 +20,15 @@ class GlobalExceptionHandlerTest {
 
         assertEquals(HttpStatus.CONFLICT.value(), response.getStatus());
         assertEquals("Operação viola uma restrição de integridade dos dados", response.getMessage());
+    }
+
+    @Test
+    void shouldPreserveResponseStatusExceptions() {
+        ResponseEntity<ErrorResponse> response = exceptionHandler.handleResponseStatus(
+                new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Credenciais inválidas")
+        );
+
+        assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
+        assertEquals("Credenciais inválidas", response.getBody().getMessage());
     }
 }

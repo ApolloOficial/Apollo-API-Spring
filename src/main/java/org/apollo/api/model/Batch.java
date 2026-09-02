@@ -17,7 +17,11 @@ public class Batch {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "bill_number", nullable = false, unique = true, length = 50)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "company_id", nullable = false)
+    private Company company;
+
+    @Column(name = "bill_number", nullable = false, length = 50)
     private String billNumber;
 
     @Column(name = "manufacturer", nullable = false, length = 100)
