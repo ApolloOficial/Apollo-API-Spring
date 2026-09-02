@@ -28,6 +28,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringJUnitWebConfig(classes = {SecurityConfig.class, SecurityConfigTest.TestConfiguration.class})
@@ -78,7 +79,12 @@ class SecurityConfigTest {
 
     @Test
     void shouldRequireAuthenticationForCrudEndpoints() throws Exception {
-        mockMvc.perform(get("/api/test")).andExpect(status().isUnauthorized());
+        mockMvc.perform(get("/api/test"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(content().contentType("application/json"))
+                .andExpect(content().json("""
+                        {"status": 401, "message": "Token ausente ou inválido"}
+                        """));
     }
 
     private void authenticate(String token, String roleName) {
