@@ -1,12 +1,16 @@
 package org.apollo.api.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.apollo.api.exception.ErrorResponse;
 import org.apollo.api.dto.CompanyUnitDTO;
 import org.apollo.api.service.CompanyUnitService;
 import org.springframework.http.HttpStatus;
@@ -34,7 +38,9 @@ public class CompanyUnitController {
     @Operation(summary = "Find company unit by ID")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Company unit returned successfully"),
-            @ApiResponse(responseCode = "404", description = "Company unit not found")
+            @ApiResponse(responseCode = "404", description = "Company unit not found",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(value = "{\"status\": 404, \"message\": \"Unidade não encontrada: 1\"}")))
     })
     public CompanyUnitDTO findById(@PathVariable Long id) {
         return companyUnitService.findById(id);
@@ -52,8 +58,12 @@ public class CompanyUnitController {
     @Operation(summary = "Create company unit")
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Company unit created successfully"),
-            @ApiResponse(responseCode = "400", description = "Invalid company unit data"),
-            @ApiResponse(responseCode = "404", description = "Segment not found")
+            @ApiResponse(responseCode = "400", description = "Invalid company unit data",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(value = "{\"status\": 400, \"message\": \"name: Nome é obrigatório\"}"))),
+            @ApiResponse(responseCode = "404", description = "Segment not found",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(value = "{\"status\": 404, \"message\": \"Segmento não encontrado: 1\"}")))
     })
     public CompanyUnitDTO create(@Valid @RequestBody CompanyUnitDTO dto) {
         return companyUnitService.create(dto);
@@ -63,8 +73,12 @@ public class CompanyUnitController {
     @Operation(summary = "Update company unit")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Company unit updated successfully"),
-            @ApiResponse(responseCode = "400", description = "Invalid company unit data"),
-            @ApiResponse(responseCode = "404", description = "Company unit or segment not found")
+            @ApiResponse(responseCode = "400", description = "Invalid company unit data",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(value = "{\"status\": 400, \"message\": \"name: Nome é obrigatório\"}"))),
+            @ApiResponse(responseCode = "404", description = "Company unit or segment not found",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(value = "{\"status\": 404, \"message\": \"Unidade não encontrada: 1\"}")))
     })
     public CompanyUnitDTO update(@PathVariable Long id, @Valid @RequestBody CompanyUnitDTO dto) {
         return companyUnitService.update(id, dto);
@@ -75,7 +89,9 @@ public class CompanyUnitController {
     @Operation(summary = "Delete company unit")
     @ApiResponses({
             @ApiResponse(responseCode = "204", description = "Company unit deleted successfully"),
-            @ApiResponse(responseCode = "404", description = "Company unit not found")
+            @ApiResponse(responseCode = "404", description = "Company unit not found",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(value = "{\"status\": 404, \"message\": \"Unidade não encontrada: 1\"}")))
     })
     public void delete(@PathVariable Long id) {
         companyUnitService.delete(id);

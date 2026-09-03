@@ -1,12 +1,17 @@
 package org.apollo.api.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.apollo.api.exception.ErrorResponse;
+import org.apollo.api.dto.AdministratorCreateDTO;
 import org.apollo.api.dto.UserDTO;
 import org.apollo.api.service.UserService;
 import org.springframework.http.HttpStatus;
@@ -34,7 +39,9 @@ public class UserController {
     @Operation(summary = "Find user by ID")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "User returned successfully"),
-            @ApiResponse(responseCode = "404", description = "User not found")
+            @ApiResponse(responseCode = "404", description = "User not found",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(value = "{\"status\": 404, \"message\": \"Usuário não encontrado: 1\"}")))
     })
     public UserDTO findById(@PathVariable Long id) {
         return userService.findById(id);
@@ -45,9 +52,11 @@ public class UserController {
     @Operation(summary = "Create user")
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "User created successfully"),
-            @ApiResponse(responseCode = "400", description = "Invalid user data")
+            @ApiResponse(responseCode = "400", description = "Invalid user data",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(value = "{\"status\": 400, \"message\": \"email: Email inválido\"}")))
     })
-    public UserDTO create(@Valid @RequestBody UserDTO dto) {
+    public UserDTO create(@Valid @RequestBody AdministratorCreateDTO dto) {
         return userService.create(dto);
     }
 
@@ -55,8 +64,12 @@ public class UserController {
     @Operation(summary = "Update user")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "User updated successfully"),
-            @ApiResponse(responseCode = "400", description = "Invalid user data"),
-            @ApiResponse(responseCode = "404", description = "User not found")
+            @ApiResponse(responseCode = "400", description = "Invalid user data",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(value = "{\"status\": 400, \"message\": \"email: Email inválido\"}"))),
+            @ApiResponse(responseCode = "404", description = "User not found",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(value = "{\"status\": 404, \"message\": \"Usuário não encontrado: 1\"}")))
     })
     public UserDTO update(@PathVariable Long id, @Valid @RequestBody UserDTO dto) {
         return userService.update(id, dto);
@@ -67,7 +80,9 @@ public class UserController {
     @Operation(summary = "Delete user")
     @ApiResponses({
             @ApiResponse(responseCode = "204", description = "User deleted successfully"),
-            @ApiResponse(responseCode = "404", description = "User not found")
+            @ApiResponse(responseCode = "404", description = "User not found",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(value = "{\"status\": 404, \"message\": \"Usuário não encontrado: 1\"}")))
     })
     public void delete(@PathVariable Long id) {
         userService.delete(id);

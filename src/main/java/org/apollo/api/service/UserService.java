@@ -1,14 +1,20 @@
 package org.apollo.api.service;
 
 import lombok.RequiredArgsConstructor;
+import org.apollo.api.dto.AdministratorCreateDTO;
 import org.apollo.api.dto.UserDTO;
+import org.apollo.api.exception.BusinessRuleException;
 import org.apollo.api.exception.ResourceNotFoundException;
+import org.apollo.api.model.Company;
 import org.apollo.api.model.Roles;
 import org.apollo.api.model.User;
+import org.apollo.api.repository.CompanyRepository;
 import org.apollo.api.repository.RolesRepository;
 import org.apollo.api.repository.UserRepository;
+import org.apollo.api.security.TenantContext;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
 import java.util.List;
 
 @Service
@@ -17,86 +23,89 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final RolesRepository rolesRepository;
+    private final CompanyRepository companyRepository;
     private final PasswordEncoder passwordEncoder;
+    private final TenantContext tenantContext;
 
     public List<UserDTO> findAll() {
-        return userRepository.findAll().stream()
-                .map(this::toDTO)
-                .toList();
+        return userRepository.findAllByCompanyId(companyId()).stream().map(this::toDTO).toList();
     }
 
     public UserDTO findById(Long id) {
-        User user = userRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado: " + id));
-        return toDTO(user);
+        return toDTO(findUser(id));
     }
 
-    public UserDTO create(UserDTO dto) {
-        if (userRepository.findByEmail(dto.getEmail()).isPresent()) {
-            throw new IllegalArgumentException("Usuário com este email já existe: " + dto.getEmail());
+    public UserDTO create(AdministratorCreateDTO dto) {
+        Long companyId = companyId();
+        if (userRepository.findByCompanyIdAndEmail(companyId, dto.getEmail()).isPresent()) {
+            throw new BusinessRuleException("Usuário com este email já existe nesta empresa");
         }
-        if (userRepository.findByCpf(dto.getCpf()).isPresent()) {
-            throw new IllegalArgumentException("Usuário com este CPF já existe: " + dto.getCpf());
+        if (userRepository.findByCompanyIdAndCpf(companyId, dto.getCpf()).isPresent()) {
+            throw new BusinessRuleException("Usuário com este CPF já existe nesta empresa");
         }
 
-        Roles role = rolesRepository.findById(dto.getRoleId())
-                .orElseThrow(() -> new ResourceNotFoundException("Perfil não encontrado: " + dto.getRoleId()));
+        Company company = companyRepository.findById(companyId)
+                .orElseThrow(() -> new ResourceNotFoundException("Empresa não encontrada: " + companyId));
+        Roles role = findRole(dto.getRoleId());
 
         User user = new User();
+        user.setCompany(company);
+        user.setRole(role);
         user.setFullName(dto.getFullName());
         user.setEmail(dto.getEmail());
         user.setCpf(dto.getCpf());
-        user.setRole(role);
-
+        user.setPassword(passwordEncoder.encode(dto.getPassword()));
         return toDTO(userRepository.save(user));
     }
 
     public UserDTO update(Long id, UserDTO dto) {
-        User user = userRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado: " + id));
-
-        if (!user.getEmail().equals(dto.getEmail()) && userRepository.findByEmail(dto.getEmail()).isPresent()) {
-            throw new IllegalArgumentException("Usuário com este email já existe: " + dto.getEmail());
-        }
-        if (!user.getCpf().equals(dto.getCpf()) && userRepository.findByCpf(dto.getCpf()).isPresent()) {
-            throw new IllegalArgumentException("Usuário com este CPF já existe: " + dto.getCpf());
-        }
-
-        Roles role = rolesRepository.findById(dto.getRoleId())
-                .orElseThrow(() -> new ResourceNotFoundException("Perfil não encontrado: " + dto.getRoleId()));
+        User user = findUser(id);
+        Long companyId = companyId();
+        userRepository.findByCompanyIdAndEmail(companyId, dto.getEmail())
+                .filter(found -> !found.getId().equals(id))
+                .ifPresent(found -> {
+                    throw new BusinessRuleException("Usuário com este email já existe nesta empresa");
+                });
+        userRepository.findByCompanyIdAndCpf(companyId, dto.getCpf())
+                .filter(found -> !found.getId().equals(id))
+                .ifPresent(found -> {
+                    throw new BusinessRuleException("Usuário com este CPF já existe nesta empresa");
+                });
 
         user.setFullName(dto.getFullName());
         user.setEmail(dto.getEmail());
         user.setCpf(dto.getCpf());
-        user.setRole(role);
-
+        user.setRole(findRole(dto.getRoleId()));
         return toDTO(userRepository.save(user));
     }
 
     public void delete(Long id) {
-        if (!userRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Usuário não encontrado: " + id);
-        }
-        userRepository.deleteById(id);
+        userRepository.delete(findUser(id));
+    }
+
+    private User findUser(Long id) {
+        return userRepository.findByIdAndCompanyId(id, companyId())
+                .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado: " + id));
+    }
+
+    private Roles findRole(Long roleId) {
+        return rolesRepository.findById(roleId)
+                .orElseThrow(() -> new ResourceNotFoundException("Perfil não encontrado: " + roleId));
+    }
+
+    private Long companyId() {
+        return tenantContext.getCompanyId();
     }
 
     private UserDTO toDTO(User user) {
         return new UserDTO(
                 user.getId(),
+                user.getCompany().getId(),
                 user.getRole().getId(),
                 user.getRole().getName(),
                 user.getFullName(),
                 user.getEmail(),
                 user.getCpf()
         );
-    }
-
-    private User toEntity(UserDTO dto, Roles role) {
-        User user = new User();
-        user.setFullName(dto.getFullName());
-        user.setEmail(dto.getEmail());
-        user.setCpf(dto.getCpf());
-        user.setRole(role);
-        return user;
     }
 }

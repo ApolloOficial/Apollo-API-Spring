@@ -1,5 +1,7 @@
 package org.apollo.api.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PastOrPresent;
@@ -17,6 +19,9 @@ import java.time.LocalDate;
 public class BatchDTO {
 
     private Long id;
+
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    private Long companyId;
 
     @NotBlank(message = "Número da nota fiscal é obrigatório")
     @Size(max = 50, message = "Número da nota fiscal deve ter no máximo 50 caracteres")

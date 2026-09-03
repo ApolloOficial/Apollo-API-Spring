@@ -1,8 +1,9 @@
 package org.apollo.api.util;
 
 import org.apollo.api.model.Roles;
-import org.apollo.api.model.User;
-import org.apollo.api.repository.UserRepository;
+import org.apollo.api.repository.AuthUserRepository;
+import org.apollo.api.security.AuthUser;
+import org.apollo.api.security.JwtAuthenticationData;
 import org.apollo.api.service.JwtService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -27,6 +28,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringJUnitWebConfig(classes = {SecurityConfig.class, SecurityConfigTest.TestConfiguration.class})
@@ -40,7 +42,7 @@ class SecurityConfigTest {
     private JwtService jwtService;
 
     @Autowired
-    private UserRepository userRepository;
+    private AuthUserRepository authUserRepository;
 
     @Autowired
     private FilterChainProxy springSecurityFilterChain;
@@ -56,99 +58,63 @@ class SecurityConfigTest {
 
     @Test
     void shouldAllowOperatorToWrite() throws Exception {
-        authenticate("operator-token", "OPERADOR");
-
-        mockMvc.perform(post("/api/test")
-                        .header(HttpHeaders.AUTHORIZATION, "Bearer operator-token"))
+        authenticate("operator-token", "OPERATOR");
+        mockMvc.perform(post("/api/test").header(HttpHeaders.AUTHORIZATION, "Bearer operator-token"))
                 .andExpect(status().isOk());
     }
 
     @Test
     void shouldAllowAnalystToRead() throws Exception {
-        authenticate("analyst-token", "ANALISTA");
-
-        mockMvc.perform(get("/api/test")
-                        .header(HttpHeaders.AUTHORIZATION, "Bearer analyst-token"))
+        authenticate("analyst-token", "ANALYST");
+        mockMvc.perform(get("/api/test").header(HttpHeaders.AUTHORIZATION, "Bearer analyst-token"))
                 .andExpect(status().isOk());
     }
 
     @Test
     void shouldRejectAnalystWrite() throws Exception {
-        authenticate("analyst-token", "ANALISTA");
-
-        mockMvc.perform(post("/api/test")
-                        .header(HttpHeaders.AUTHORIZATION, "Bearer analyst-token"))
-                .andExpect(status().isForbidden());
-    }
-
-    @Test
-    void shouldRejectTechnicianFromCrudEndpoints() throws Exception {
-        authenticate("technician-token", "TECNICO");
-
-        mockMvc.perform(get("/api/test")
-                        .header(HttpHeaders.AUTHORIZATION, "Bearer technician-token"))
+        authenticate("analyst-token", "ANALYST");
+        mockMvc.perform(post("/api/test").header(HttpHeaders.AUTHORIZATION, "Bearer analyst-token"))
                 .andExpect(status().isForbidden());
     }
 
     @Test
     void shouldRequireAuthenticationForCrudEndpoints() throws Exception {
         mockMvc.perform(get("/api/test"))
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().isUnauthorized())
+                .andExpect(content().contentType("application/json"))
+                .andExpect(content().json("""
+                        {"status": 401, "message": "Token ausente ou inválido"}
+                        """));
     }
 
     private void authenticate(String token, String roleName) {
         String email = roleName.toLowerCase() + "@apollo.com";
-        User user = new User(
-                1L,
-                new Roles(1L, roleName, null),
-                roleName,
-                email,
-                "encoded-password",
-                "12345678901"
-        );
-        when(jwtService.extractSubject(token)).thenReturn(email);
-        when(userRepository.findByEmail(email)).thenReturn(Optional.of(user));
+        AuthUser user = mock(AuthUser.class);
+        when(user.getUserId()).thenReturn(1L);
+        when(user.getCompanyId()).thenReturn(10L);
+        when(user.getUserType()).thenReturn("ADMINISTRATOR");
+        when(user.getEmail()).thenReturn(email);
+        when(user.isActive()).thenReturn(true);
+        when(user.getRole()).thenReturn(new Roles(1L, roleName, null));
+        when(jwtService.extractAuthentication(token)).thenReturn(new JwtAuthenticationData(1L, 10L, "ADMINISTRATOR", email));
+        when(authUserRepository.findActiveByIdentity(1L, 10L, "ADMINISTRATOR", email))
+                .thenReturn(Optional.of(user));
     }
 
     @Configuration
     @EnableWebMvc
     static class TestConfiguration {
-
-        @Bean
-        JwtService jwtService() {
-            return mock(JwtService.class);
+        @Bean JwtService jwtService() { return mock(JwtService.class); }
+        @Bean AuthUserRepository authUserRepository() { return mock(AuthUserRepository.class); }
+        @Bean JwtAuthenticationFilter jwtAuthenticationFilter(JwtService jwtService, AuthUserRepository authUserRepository) {
+            return new JwtAuthenticationFilter(jwtService, authUserRepository);
         }
-
-        @Bean
-        UserRepository userRepository() {
-            return mock(UserRepository.class);
-        }
-
-        @Bean
-        JwtAuthenticationFilter jwtAuthenticationFilter(
-                JwtService jwtService,
-                UserRepository userRepository
-        ) {
-            return new JwtAuthenticationFilter(jwtService, userRepository);
-        }
-
-        @Bean
-        TestController testController() {
-            return new TestController();
-        }
+        @Bean TestController testController() { return new TestController(); }
     }
 
     @RestController
     static class TestController {
-
-        @GetMapping("/api/test")
-        String read() {
-            return "ok";
-        }
-
-        @PostMapping("/api/test")
-        String write() {
-            return "ok";
-        }
+        @GetMapping("/api/test") String read() { return "ok"; }
+        @PostMapping("/api/test") String write() { return "ok"; }
     }
 }
