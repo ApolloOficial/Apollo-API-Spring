@@ -24,7 +24,8 @@ public class User implements UserDetails {
     private Long id;
 
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
-    private Long companyId;
+    @Column(name = "company", nullable = false, length = 200)
+    private String company;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "role_id", nullable = false)
