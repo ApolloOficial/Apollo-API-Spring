@@ -55,20 +55,61 @@ public class SecurityConfig {
                 )
                 .authorizeHttpRequests(authorize ->
                         authorize
-                                .requestMatchers("/api/v1/auth/login").permitAll()
+                                // Login
+                                .requestMatchers("/api/v1/auth/login")
+                                .permitAll()
+
+                                // Swagger
                                 .requestMatchers(
                                         "/swagger-ui/**",
                                         "/swagger-ui.html",
                                         "/v3/api-docs/**"
-                                ).permitAll()
-                                .requestMatchers(HttpMethod.GET, "/api/**").hasAnyRole("OPERATOR", "ANALYST", "TECHNICIAN", "ADMINISTRATOR")
-                                .requestMatchers("/api/**").hasAnyRole("ADMINISTRATOR")
-                                .anyRequest().authenticated()
+                                )
+                                .permitAll()
+
+                                // GET
+                                .requestMatchers(HttpMethod.GET, "/api/**")
+                                .hasAnyRole(
+                                        "OPERATOR",
+                                        "ANALYST",
+                                        "TECHNICIAN",
+                                        "ADMINISTRATOR"
+                                )
+
+                                // POST
+                                .requestMatchers(HttpMethod.POST, "/api/**")
+                                .hasAnyRole(
+                                        "OPERATOR",
+                                        "ADMINISTRATOR"
+                                )
+
+                                // PUT
+                                .requestMatchers(HttpMethod.PUT, "/api/**")
+                                .hasAnyRole(
+                                        "OPERATOR",
+                                        "ADMINISTRATOR"
+                                )
+
+                                // PATCH
+                                .requestMatchers(HttpMethod.PATCH, "/api/**")
+                                .hasAnyRole(
+                                        "OPERATOR",
+                                        "ADMINISTRATOR"
+                                )
+
+                                // DELETE
+                                .requestMatchers(HttpMethod.DELETE, "/api/**")
+                                .hasAnyRole("ADMINISTRATOR")
+
+                                .anyRequest()
+                                .authenticated()
                 )
+
                 .addFilterBefore(
                         jwtAuthenticationFilter,
                         UsernamePasswordAuthenticationFilter.class
                 )
+
                 .build();
     }
 }
