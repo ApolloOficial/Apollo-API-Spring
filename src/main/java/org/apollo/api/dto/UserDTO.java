@@ -1,7 +1,6 @@
 package org.apollo.api.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -38,6 +37,9 @@ public class UserDTO {
     private String email;
 
     @NotBlank(message = "CPF é obrigatório")
-    @Pattern(regexp = "^[0-9]{11}$", message = "CPF deve conter exatamente 11 dígitos")
+    @Pattern(
+            regexp = "^[0-9]{11}$",
+            message = "CPF deve conter exatamente 11 dígitos"
+    )
     private String cpf;
 }

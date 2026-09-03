@@ -16,6 +16,13 @@ public class BCryptPasswordEncoderTest {
     public static void main(String[] args) {
         // Para hashear uma senha, troque a senha pré-definida pela senha desejada
         BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
-        System.out.println(encoder.encode("123456")); // Aqui... Troque a senha 123456 pela senha que você deseja
+        System.out.println(encoder.encode("password")); // Aqui... Troque a senha 123456 pela senha que você deseja
+
+        System.out.println();
+
+        System.out.println(encoder.matches(
+                "password",
+                "$2a$10$5JFcc863HRcftf3QFE8uc.kCc5XVRCGxmSY2MoR8JsyLg0dpPTIRa"
+        ));
     }
 }
