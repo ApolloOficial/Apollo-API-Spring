@@ -1,6 +1,6 @@
 package org.apollo.api.model;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -23,9 +23,9 @@ public class User implements UserDetails {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
-    @Column(name = "company", nullable = false, length = 200)
-    private String company;
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "company", nullable = false)
+    private Company company;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "role_id", nullable = false)
@@ -37,6 +37,7 @@ public class User implements UserDetails {
     @Column(name = "email", nullable = false, length = 100)
     private String email;
 
+    @JsonIgnore
     @Column(name = "password", nullable = false, length = 150)
     private String password;
 
@@ -48,7 +49,9 @@ public class User implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return Collections.singleton(new SimpleGrantedAuthority("ROLE_" + role.getName()));
+        return Collections.singleton(
+                new SimpleGrantedAuthority("ROLE_" + role.getName())
+        );
     }
 
     @Override
