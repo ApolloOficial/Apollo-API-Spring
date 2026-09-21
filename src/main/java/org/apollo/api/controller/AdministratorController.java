@@ -12,8 +12,8 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.apollo.api.exception.ErrorResponse;
 import org.apollo.api.dto.AdministratorCreateDTO;
-import org.apollo.api.dto.UserDTO;
-import org.apollo.api.service.UserService;
+import org.apollo.api.dto.AdministratorDTO;
+import org.apollo.api.service.AdministratorService;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -24,15 +24,15 @@ import java.util.List;
 @RequiredArgsConstructor
 @Tag(name = "User", description = "User management operations")
 @SecurityRequirement(name = "bearer-key")
-public class UserController {
+public class AdministratorController {
 
-    private final UserService userService;
+    private final AdministratorService administratorService;
 
     @GetMapping
     @Operation(summary = "List users")
     @ApiResponse(responseCode = "200", description = "Users returned successfully")
-    public List<UserDTO> findAll() {
-        return userService.findAll();
+    public List<AdministratorDTO> findAll() {
+        return administratorService.findAll();
     }
 
     @GetMapping("/{id}")
@@ -43,8 +43,8 @@ public class UserController {
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class),
                             examples = @ExampleObject(value = "{\"status\": 404, \"message\": \"Usuário não encontrado: 1\"}")))
     })
-    public UserDTO findById(@PathVariable Long id) {
-        return userService.findById(id);
+    public AdministratorDTO findById(@PathVariable Long id) {
+        return administratorService.findById(id);
     }
 
     @PostMapping
@@ -56,8 +56,8 @@ public class UserController {
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class),
                             examples = @ExampleObject(value = "{\"status\": 400, \"message\": \"email: Email inválido\"}")))
     })
-    public UserDTO create(@Valid @RequestBody AdministratorCreateDTO dto) {
-        return userService.create(dto);
+    public AdministratorDTO create(@Valid @RequestBody AdministratorCreateDTO dto) {
+        return administratorService.create(dto);
     }
 
     @PutMapping("/{id}")
@@ -71,8 +71,8 @@ public class UserController {
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class),
                             examples = @ExampleObject(value = "{\"status\": 404, \"message\": \"Usuário não encontrado: 1\"}")))
     })
-    public UserDTO update(@PathVariable Long id, @Valid @RequestBody UserDTO dto) {
-        return userService.update(id, dto);
+    public AdministratorDTO update(@PathVariable Long id, @Valid @RequestBody AdministratorDTO dto) {
+        return administratorService.update(id, dto);
     }
 
     @DeleteMapping("/{id}")
@@ -85,6 +85,6 @@ public class UserController {
                             examples = @ExampleObject(value = "{\"status\": 404, \"message\": \"Usuário não encontrado: 1\"}")))
     })
     public void delete(@PathVariable Long id) {
-        userService.delete(id);
+        administratorService.delete(id);
     }
 }

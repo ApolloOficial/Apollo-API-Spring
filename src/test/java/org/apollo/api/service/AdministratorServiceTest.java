@@ -1,13 +1,13 @@
 package org.apollo.api.service;
 
 import org.apollo.api.dto.AdministratorCreateDTO;
-import org.apollo.api.dto.UserDTO;
+import org.apollo.api.dto.AdministratorDTO;
+import org.apollo.api.model.Administrator;
 import org.apollo.api.model.Company;
 import org.apollo.api.model.Roles;
-import org.apollo.api.model.User;
 import org.apollo.api.repository.CompanyRepository;
 import org.apollo.api.repository.RolesRepository;
-import org.apollo.api.repository.UserRepository;
+import org.apollo.api.repository.AdministratorRepository;
 import org.apollo.api.security.TenantContext;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -24,14 +24,14 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class UserServiceTest {
+class AdministratorServiceTest {
 
-    @Mock private UserRepository userRepository;
+    @Mock private AdministratorRepository administratorRepository;
     @Mock private RolesRepository rolesRepository;
     @Mock private CompanyRepository companyRepository;
     @Mock private PasswordEncoder passwordEncoder;
     @Mock private TenantContext tenantContext;
-    @InjectMocks private UserService userService;
+    @InjectMocks private AdministratorService administratorService;
 
     @Test
     void shouldEncodePasswordAndUseAuthenticatedTenantWhenCreatingAdministrator() {
@@ -45,21 +45,21 @@ class UserServiceTest {
         Roles role = new Roles(1L, "ADMINISTRATOR", null);
 
         when(tenantContext.getCompanyId()).thenReturn(10L);
-        when(userRepository.findByCompanyIdAndEmail(10L, request.getEmail())).thenReturn(Optional.empty());
-        when(userRepository.findByCompanyIdAndCpf(10L, request.getCpf())).thenReturn(Optional.empty());
+        when(administratorRepository.findByCompanyIdAndEmail(10L, request.getEmail())).thenReturn(Optional.empty());
+        when(administratorRepository.findByCompanyIdAndCpf(10L, request.getCpf())).thenReturn(Optional.empty());
         when(companyRepository.findById(10L)).thenReturn(Optional.of(company));
         when(rolesRepository.findById(1L)).thenReturn(Optional.of(role));
         when(passwordEncoder.encode(request.getPassword())).thenReturn("bcrypt-hash");
-        when(userRepository.save(org.mockito.ArgumentMatchers.any(User.class)))
+        when(administratorRepository.save(org.mockito.ArgumentMatchers.any(Administrator.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
-        UserDTO response = userService.create(request);
+        AdministratorDTO response = administratorService.create(request);
 
-        ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
-        verify(userRepository).save(userCaptor.capture());
-        User savedUser = userCaptor.getValue();
-        assertEquals("bcrypt-hash", savedUser.getPassword());
-        assertEquals(10L, savedUser.getCompany().getId());
+        ArgumentCaptor<Administrator> userCaptor = ArgumentCaptor.forClass(Administrator.class);
+        verify(administratorRepository).save(userCaptor.capture());
+        Administrator savedAdministrator = userCaptor.getValue();
+        assertEquals("bcrypt-hash", savedAdministrator.getPassword());
+        assertEquals(10L, savedAdministrator.getCompany().getId());
         assertEquals(10L, response.getCompanyId());
     }
 }
