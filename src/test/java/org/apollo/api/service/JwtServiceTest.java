@@ -32,7 +32,7 @@ class JwtServiceTest {
         String token = jwtService.generateToken(new AuthenticatedUser(authUser));
         JwtAuthenticationData identity = jwtService.extractAuthentication(token);
 
-        assertEquals(11L, identity.userId());
+        assertEquals("11", identity.userId());
         assertEquals(22L, identity.companyId());
         assertEquals("ADMINISTRATOR", identity.userType());
         assertEquals("admin@apollo.local", identity.email());

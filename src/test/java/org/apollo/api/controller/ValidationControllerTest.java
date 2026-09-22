@@ -44,7 +44,7 @@ class ValidationControllerTest {
 
     @Test
     void shouldRejectInvalidPanelBeforeCallingService() throws Exception {
-        mockMvc.perform(post("/api/panels")
+        mockMvc.perform(post("/api/v1/panels")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
                 .andExpect(status().isBadRequest());
