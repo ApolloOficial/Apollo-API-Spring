@@ -11,5 +11,5 @@ import java.io.Serializable;
 @AllArgsConstructor
 public class AuthUserId implements Serializable {
     private String userType;
-    private Long userId;
+    private String userId;
 }

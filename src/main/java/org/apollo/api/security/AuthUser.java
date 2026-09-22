@@ -26,8 +26,8 @@ public class AuthUser {
     private String userType;
 
     @Id
-    @Column(name = "user_id", nullable = false)
-    private Long userId;
+    @Column(name = "user_id", nullable = false, length = 50)
+    private String userId;
 
     @Column(name = "company_id", nullable = false)
     private Long companyId;
