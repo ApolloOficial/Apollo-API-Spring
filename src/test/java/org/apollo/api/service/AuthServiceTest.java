@@ -41,7 +41,7 @@ class AuthServiceTest {
     void shouldReturnBearerTokenWhenCredentialsAreValidForTenant() {
         LoginRequestDTO request = new LoginRequestDTO(10L, "admin@apollo.com", "password");
         AuthUser authUser = authenticatedUser();
-        when(authUserRepository.findActiveByCompanyIdAndEmail(10L, "admin@apollo.com"))
+        when(authUserRepository.findActiveByCompanyIdANDEmail(10L, "admin@apollo.com"))
                 .thenReturn(List.of(authUser));
         when(passwordEncoder.matches("password", "encoded-password")).thenReturn(true);
         when(jwtService.generateToken(org.mockito.ArgumentMatchers.any())).thenReturn("generated-token");
@@ -55,7 +55,7 @@ class AuthServiceTest {
     @Test
     void shouldRejectCredentialsFromAnotherTenant() {
         LoginRequestDTO request = new LoginRequestDTO(20L, "admin@apollo.com", "password");
-        when(authUserRepository.findActiveByCompanyIdAndEmail(20L, "admin@apollo.com"))
+        when(authUserRepository.findActiveByCompanyIdANDEmail(20L, "admin@apollo.com"))
                 .thenReturn(List.of());
 
         ResponseStatusException exception = assertThrows(ResponseStatusException.class, () -> authService.login(request));
@@ -66,7 +66,7 @@ class AuthServiceTest {
 
     private AuthUser authenticatedUser() {
         AuthUser user = mock(AuthUser.class);
-        when(user.getUserId()).thenReturn(1L);
+        when(user.getUserId()).thenReturn(String.valueOf(1L));
         when(user.getCompanyId()).thenReturn(10L);
         when(user.getUserType()).thenReturn("ADMINISTRATOR");
         when(user.getEmail()).thenReturn("admin@apollo.com");
