@@ -12,28 +12,28 @@ import java.util.Optional;
 public interface AuthUserRepository extends JpaRepository<AuthUser, AuthUserId> {
 
     @Query("""
-            select authUser from AuthUser authUser
-            join fetch authUser.role
-            where authUser.companyId = :companyId
-              and authUser.email = :email
-              and authUser.active = true
+            SELECT authUser FROM AuthUser authUser
+            JOIN FETCH authUser.role
+            WHERE authUser.companyId = :companyId
+              AND authUser.email = :email
+              AND authUser.active = true
             """)
-    List<AuthUser> findActiveByCompanyIdAndEmail(
+    List<AuthUser> findActiveByCompanyIdANDEmail(
             @Param("companyId") Long companyId,
             @Param("email") String email
     );
 
     @Query("""
-            select authUser from AuthUser authUser
-            join fetch authUser.role
-            where authUser.userId = :userId
-              and authUser.companyId = :companyId
-              and authUser.userType = :userType
-              and authUser.email = :email
-              and authUser.active = true
+            SELECT authUser FROM AuthUser authUser
+            JOIN FETCH authUser.role
+            WHERE authUser.userId = :userId
+              AND authUser.companyId = :companyId
+              AND authUser.userType = :userType
+              AND authUser.email = :email
+              AND authUser.active = true
             """)
     Optional<AuthUser> findActiveByIdentity(
-            @Param("userId") Long userId,
+            @Param("userId") String userId,
             @Param("companyId") Long companyId,
             @Param("userType") String userType,
             @Param("email") String email

@@ -90,14 +90,14 @@ class SecurityConfigTest {
     private void authenticate(String token, String roleName) {
         String email = roleName.toLowerCase() + "@apollo.com";
         AuthUser user = mock(AuthUser.class);
-        when(user.getUserId()).thenReturn(1L);
+        when(user.getUserId()).thenReturn("1");
         when(user.getCompanyId()).thenReturn(10L);
         when(user.getUserType()).thenReturn("ADMINISTRATOR");
         when(user.getEmail()).thenReturn(email);
         when(user.isActive()).thenReturn(true);
         when(user.getRole()).thenReturn(new Roles(1L, roleName, null));
-        when(jwtService.extractAuthentication(token)).thenReturn(new JwtAuthenticationData(1L, 10L, "ADMINISTRATOR", email));
-        when(authUserRepository.findActiveByIdentity(1L, 10L, "ADMINISTRATOR", email))
+        when(jwtService.extractAuthentication(token)).thenReturn(new JwtAuthenticationData("1", 10L, "ADMINISTRATOR", email));
+        when(authUserRepository.findActiveByIdentity("1", 10L, "ADMINISTRATOR", email))
                 .thenReturn(Optional.of(user));
     }
 

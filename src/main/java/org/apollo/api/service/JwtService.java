@@ -62,7 +62,7 @@ public class JwtService {
                 .parseSignedClaims(token)
                 .getPayload();
 
-        Long userId = getRequiredLong(claims, "userId");
+        String userId = getRequiredString(claims, "userId");
         Long companyId = getRequiredLong(claims, "companyId");
         String userType = claims.get("userType", String.class);
         String email = claims.getSubject();
@@ -70,6 +70,14 @@ public class JwtService {
             throw new IllegalArgumentException("JWT sem identidade obrigatória");
         }
         return new JwtAuthenticationData(userId, companyId, userType, email);
+    }
+
+    private String getRequiredString(Claims claims, String claim) {
+        Object value = claims.get(claim);
+        if (value == null || value.toString().isBlank()) {
+            throw new IllegalArgumentException("JWT sem claim obrigatória: " + claim);
+        }
+        return value.toString();
     }
 
     private Long getRequiredLong(Claims claims, String claim) {

@@ -7,37 +7,43 @@ import org.apollo.api.exception.ResourceNotFoundException;
 import org.apollo.api.model.Address;
 import org.apollo.api.model.Company;
 import org.apollo.api.model.CompanyUnit;
+import org.apollo.api.model.Employee;
 import org.apollo.api.model.Segment;
 import org.apollo.api.repository.CompanyRepository;
 import org.apollo.api.repository.CompanyUnitRepository;
+import org.apollo.api.repository.EmployeeRepository;
 import org.apollo.api.repository.SegmentRepository;
 import org.apollo.api.security.TenantContext;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class CompanyUnitService {
 
     private final CompanyUnitRepository companyUnitRepository;
     private final SegmentRepository segmentRepository;
     private final CompanyRepository companyRepository;
+    private final EmployeeRepository employeeRepository;
     private final TenantContext tenantContext;
 
+    @Transactional(readOnly = true)
     public List<CompanyUnitDTO> findAll() {
         return companyUnitRepository.findAllByCompanyId(companyId()).stream().map(this::toDTO).toList();
     }
 
-    public CompanyUnitDTO findById(Long id) {
+    @Transactional(readOnly = true)
+    public CompanyUnitDTO findById(UUID id) {
         return toDTO(findUnit(id));
     }
 
+    @Transactional(readOnly = true)
     public List<CompanyUnitDTO> findBySegmentId(Long segmentId) {
-        if (!segmentRepository.existsById(segmentId)) {
-            throw new ResourceNotFoundException("Segmento não encontrado: " + segmentId);
-        }
         return companyUnitRepository.findBySegmentIdAndCompanyId(segmentId, companyId()).stream()
                 .map(this::toDTO)
                 .toList();
@@ -46,30 +52,28 @@ public class CompanyUnitService {
     public CompanyUnitDTO create(CompanyUnitDTO dto) {
         Company company = companyRepository.findById(companyId())
                 .orElseThrow(() -> new ResourceNotFoundException("Empresa não encontrada: " + companyId()));
-        Segment segment = findSegment(dto.getSegmentId());
-
         CompanyUnit unit = new CompanyUnit();
         unit.setCompany(company);
-        unit.setSegment(segment);
+        unit.setSegment(findSegment(dto.getSegmentId()));
         unit.setAddress(toAddressEntity(dto.getAddress()));
         unit.setCreatedAt(LocalDate.now());
-        updateFields(unit, dto);
+        applyFields(unit, dto);
         return toDTO(companyUnitRepository.save(unit));
     }
 
-    public CompanyUnitDTO update(Long id, CompanyUnitDTO dto) {
+    public CompanyUnitDTO update(UUID id, CompanyUnitDTO dto) {
         CompanyUnit unit = findUnit(id);
         unit.setSegment(findSegment(dto.getSegmentId()));
         updateAddress(unit.getAddress(), dto.getAddress());
-        updateFields(unit, dto);
+        applyFields(unit, dto);
         return toDTO(companyUnitRepository.save(unit));
     }
 
-    public void delete(Long id) {
+    public void delete(UUID id) {
         companyUnitRepository.delete(findUnit(id));
     }
 
-    private CompanyUnit findUnit(Long id) {
+    private CompanyUnit findUnit(UUID id) {
         return companyUnitRepository.findByIdAndCompanyId(id, companyId())
                 .orElseThrow(() -> new ResourceNotFoundException("Unidade não encontrada: " + id));
     }
@@ -79,14 +83,27 @@ public class CompanyUnitService {
                 .orElseThrow(() -> new ResourceNotFoundException("Segmento não encontrado: " + segmentId));
     }
 
+    private Employee findEmployee(UUID employeeId) {
+        return employeeRepository.findByIdAndCompanyUnitCompanyId(employeeId, companyId())
+                .orElseThrow(() -> new ResourceNotFoundException("Funcionário não encontrado: " + employeeId));
+    }
+
     private Long companyId() {
         return tenantContext.getCompanyId();
     }
 
-    private void updateFields(CompanyUnit unit, CompanyUnitDTO dto) {
+    private void applyFields(CompanyUnit unit, CompanyUnitDTO dto) {
         unit.setName(dto.getName());
         unit.setEmail(dto.getEmail());
         unit.setPhone(dto.getPhone());
+        unit.setCnpj(dto.getCnpj());
+        unit.setContactEmail(dto.getContactEmail());
+        unit.setContactPhone(dto.getContactPhone());
+        unit.setKwpTotal(dto.getKwpTotal());
+        unit.setActive(dto.getActive() == null || dto.getActive());
+        unit.setResponsibleEmployee(dto.getResponsibleEmployeeId() == null
+                ? null
+                : findEmployee(dto.getResponsibleEmployeeId()));
     }
 
     private CompanyUnitDTO toDTO(CompanyUnit unit) {
@@ -99,7 +116,13 @@ public class CompanyUnitService {
                 unit.getName(),
                 unit.getCreatedAt(),
                 unit.getEmail(),
-                unit.getPhone()
+                unit.getPhone(),
+                unit.getCnpj(),
+                unit.getResponsibleEmployee() != null ? unit.getResponsibleEmployee().getId() : null,
+                unit.getContactEmail(),
+                unit.getContactPhone(),
+                unit.getKwpTotal(),
+                unit.isActive()
         );
     }
 

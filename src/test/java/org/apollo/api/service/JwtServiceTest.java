@@ -23,7 +23,7 @@ class JwtServiceTest {
                 "apollo-api-client"
         );
         AuthUser authUser = mock(AuthUser.class);
-        when(authUser.getUserId()).thenReturn(11L);
+        when(authUser.getUserId()).thenReturn(String.valueOf(11L));
         when(authUser.getCompanyId()).thenReturn(22L);
         when(authUser.getUserType()).thenReturn("ADMINISTRATOR");
         when(authUser.getEmail()).thenReturn("admin@apollo.local");
@@ -32,7 +32,7 @@ class JwtServiceTest {
         String token = jwtService.generateToken(new AuthenticatedUser(authUser));
         JwtAuthenticationData identity = jwtService.extractAuthentication(token);
 
-        assertEquals(11L, identity.userId());
+        assertEquals("11", identity.userId());
         assertEquals(22L, identity.companyId());
         assertEquals("ADMINISTRATOR", identity.userType());
         assertEquals("admin@apollo.local", identity.email());

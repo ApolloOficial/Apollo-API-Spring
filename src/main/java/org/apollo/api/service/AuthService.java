@@ -10,31 +10,50 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.Instant;
+import java.util.Locale;
+import java.util.concurrent.ConcurrentHashMap;
+
 @Service
 @RequiredArgsConstructor
 public class AuthService {
-
     private static final String INVALID_CREDENTIALS_MESSAGE = "Credenciais inválidas";
+    private static final int MAX_ATTEMPTS = 5;
+    private static final long WINDOW_SECONDS = 15 * 60;
+    private final ConcurrentHashMap<String, AttemptWindow> attempts = new ConcurrentHashMap<>();
 
     private final AuthUserRepository authUserRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
 
     public LoginResponseDTO login(LoginRequestDTO request) {
-        var matchingUsers = authUserRepository
-                .findActiveByCompanyIdAndEmail(request.getCompanyId(), request.getEmail())
-                .stream()
+        String key = request.getCompanyId() + ":" + request.getEmail().trim().toLowerCase(Locale.ROOT);
+        ensureNotBlocked(key);
+        var matchingUsers = authUserRepository.findActiveByCompanyIdANDEmail(request.getCompanyId(), request.getEmail()).stream()
                 .filter(authUser -> passwordEncoder.matches(request.getPassword(), authUser.getPassword()))
                 .map(AuthenticatedUser::new)
                 .toList();
-
         if (matchingUsers.size() != 1) {
+            registerFailure(key);
             throw invalidCredentials();
         }
+        attempts.remove(key);
         return new LoginResponseDTO(jwtService.generateToken(matchingUsers.getFirst()), "Bearer");
+    }
+
+    private void ensureNotBlocked(String key) {
+        AttemptWindow window = attempts.get(key);
+        if (window != null && !window.isExpired() && window.attempts >= MAX_ATTEMPTS) throw invalidCredentials();
+    }
+    private void registerFailure(String key) {
+        attempts.compute(key, (ignored, current) -> current == null || current.isExpired() ? new AttemptWindow(1, Instant.now()) : new AttemptWindow(current.attempts + 1, current.startedAt));
     }
 
     private ResponseStatusException invalidCredentials() {
         return new ResponseStatusException(HttpStatus.UNAUTHORIZED, INVALID_CREDENTIALS_MESSAGE);
+    }
+
+    private record AttemptWindow(int attempts, Instant startedAt) {
+        boolean isExpired() { return startedAt.plusSeconds(WINDOW_SECONDS).isBefore(Instant.now()); }
     }
 }

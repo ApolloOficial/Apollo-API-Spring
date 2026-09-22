@@ -36,10 +36,8 @@ public class AdministratorDTO {
     @Size(max = 100, message = "Email deve ter no máximo 100 caracteres")
     private String email;
 
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     @NotBlank(message = "CPF é obrigatório")
-    @Pattern(
-            regexp = "^[0-9]{11}$",
-            message = "CPF deve conter exatamente 11 dígitos"
-    )
+    @Pattern(regexp = "^[0-9]{11}$", message = "CPF deve conter exatamente 11 dígitos")
     private String cpf;
 }
