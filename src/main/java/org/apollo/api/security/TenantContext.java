@@ -5,6 +5,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
+import java.util.UUID;
+
 @Component
 public class TenantContext {
 
@@ -20,8 +22,12 @@ public class TenantContext {
         return currentUser().getCompanyId();
     }
 
-    public String getUserId() {
+    public UUID getUserId() {
         return currentUser().getUserId();
+    }
+
+    public UUID getCompanyUnitId() {
+        return currentUser().getCompanyUnitId();
     }
 
     public String getUserType() {
