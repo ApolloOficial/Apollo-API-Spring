@@ -7,17 +7,16 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.apollo.api.exception.ErrorResponse;
+import org.apollo.api.dto.ChangePasswordDTO;
 import org.apollo.api.dto.LoginRequestDTO;
 import org.apollo.api.dto.LoginResponseDTO;
+import org.apollo.api.exception.ErrorResponse;
+import org.apollo.api.security.TenantContext;
 import org.apollo.api.service.AuthService;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -26,19 +25,30 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
     private final AuthService authService;
+    private final TenantContext tenantContext;
 
     @PostMapping("/login")
     @Operation(summary = "Autenticar usuário e emitir token JWT")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Token JWT emitido com sucesso"),
-            @ApiResponse(responseCode = "400", description = "Dados de login inválidos",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class),
-                            examples = @ExampleObject(value = "{\"status\": 400, \"message\": \"companyId: Empresa é obrigatória\"}"))),
             @ApiResponse(responseCode = "401", description = "Credenciais inválidas",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class),
                             examples = @ExampleObject(value = "{\"status\": 401, \"message\": \"Credenciais inválidas\"}")))
     })
     public LoginResponseDTO login(@Valid @RequestBody LoginRequestDTO request) {
         return authService.login(request);
+    }
+
+    @PatchMapping("/password")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Operation(summary = "Trocar a própria senha")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Senha alterada com sucesso"),
+            @ApiResponse(responseCode = "400", description = "Senha atual incorreta ou nova senha inválida",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(value = "{\"status\": 400, \"message\": \"Senha atual incorreta\"}")))
+    })
+    public void changePassword(@Valid @RequestBody ChangePasswordDTO dto) {
+        authService.changePassword(tenantContext.getUserId(), tenantContext.getCompanyId(), dto);
     }
 }
