@@ -17,6 +17,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/company-units")
@@ -42,7 +43,7 @@ public class CompanyUnitController {
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class),
                             examples = @ExampleObject(value = "{\"status\": 404, \"message\": \"Unidade não encontrada: 1\"}")))
     })
-    public CompanyUnitDTO findById(@PathVariable Long id) {
+    public CompanyUnitDTO findById(@PathVariable UUID id) {
         return companyUnitService.findById(id);
     }
 
@@ -80,7 +81,7 @@ public class CompanyUnitController {
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class),
                             examples = @ExampleObject(value = "{\"status\": 404, \"message\": \"Unidade não encontrada: 1\"}")))
     })
-    public CompanyUnitDTO update(@PathVariable Long id, @Valid @RequestBody CompanyUnitDTO dto) {
+    public CompanyUnitDTO update(@PathVariable UUID id, @Valid @RequestBody CompanyUnitDTO dto) {
         return companyUnitService.update(id, dto);
     }
 
@@ -93,7 +94,7 @@ public class CompanyUnitController {
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class),
                             examples = @ExampleObject(value = "{\"status\": 404, \"message\": \"Unidade não encontrada: 1\"}")))
     })
-    public void delete(@PathVariable Long id) {
+    public void delete(@PathVariable UUID id) {
         companyUnitService.delete(id);
     }
 }

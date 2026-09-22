@@ -16,6 +16,7 @@ import org.apollo.api.service.BatchService;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/batches")
@@ -49,7 +50,7 @@ public class BatchController {
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class),
                             examples = @ExampleObject(value = "{\"status\": 404, \"message\": \"Lote não encontrado: 1\"}")))
     })
-    public BatchDTO findById(@PathVariable Long id) {
+    public BatchDTO findById(@PathVariable UUID id) {
         return batchService.findById(id);
     }
 
@@ -76,7 +77,7 @@ public class BatchController {
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class),
                             examples = @ExampleObject(value = "{\"status\": 404, \"message\": \"Lote não encontrado: 1\"}")))
     })
-    public BatchDTO update(@PathVariable Long id, @Valid @RequestBody BatchDTO dto) {
+    public BatchDTO update(@PathVariable UUID id, @Valid @RequestBody BatchDTO dto) {
         return batchService.update(id, dto);
     }
 
@@ -91,7 +92,7 @@ public class BatchController {
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class),
                             examples = @ExampleObject(value = "{\"status\": 404, \"message\": \"Lote não encontrado: 1\"}")))
     })
-    public void delete(@PathVariable Long id) {
+    public void delete(@PathVariable UUID id) {
         batchService.delete(id);
     }
 }

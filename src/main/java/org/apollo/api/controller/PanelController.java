@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/panels")
+@RequestMapping("/api/v1/panels")
 @RequiredArgsConstructor
 @Tag(name = "Panel", description = "Panel management operations")
 @SecurityRequirement(name = "bearer-key")

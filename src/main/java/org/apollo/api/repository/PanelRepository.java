@@ -7,6 +7,6 @@ import java.util.List;
 import java.util.Optional;
 
 public interface PanelRepository extends JpaRepository<Panel, Long> {
-    List<Panel> findAllByBatchCompanyId(Long companyId);
-    Optional<Panel> findByIdAndBatchCompanyId(Long id, Long companyId);
+    List<Panel> findAllByBatchCompanyUnitCompanyId(Long companyId);
+    Optional<Panel> findByIdAndBatchCompanyUnitCompanyId(Long id, Long companyId);
 }
