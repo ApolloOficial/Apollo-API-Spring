@@ -14,7 +14,7 @@ import java.util.UUID;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class EmployeeCreateDTO {
+public class EmployeeUpdateDTO {
 
     @NotBlank(message = "Nome é obrigatório")
     @Size(max = 120, message = "Nome deve ter no máximo 120 caracteres")
@@ -29,13 +29,8 @@ public class EmployeeCreateDTO {
     @Positive(message = "Cargo deve ser válido")
     private Long roleId;
 
-    @NotNull(message = "Unidade é obrigatória")
     private UUID companyUnitId;
 
     @NotNull(message = "Status é obrigatório")
-    private Boolean active = true;
-
-    @NotBlank(message = "Senha temporária é obrigatória")
-    @Size(min = 8, max = 72, message = "Senha temporária deve ter entre 8 e 72 caracteres")
-    private String temporaryPassword;
+    private Boolean active;
 }
