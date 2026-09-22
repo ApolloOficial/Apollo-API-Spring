@@ -2,8 +2,10 @@ package org.apollo.api.model;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+import org.hibernate.annotations.UpdateTimestamp;
 import org.apollo.api.enums.MaintenanceStatusEnum;
 import org.apollo.api.enums.PriorityEnum;
 
@@ -13,11 +15,11 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "maintenance_register")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 public class MaintenanceRegister {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -39,10 +41,10 @@ public class MaintenanceRegister {
     private Employee technician;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "created_by", nullable = false)
+    @JoinColumn(name = "created_by", nullable = false, updatable = false)
     private Employee createdBy;
 
-    @Column(name = "technical_report")
+    @Column(name = "technical_report", columnDefinition = "TEXT")
     private String technicalReport;
 
     @Enumerated(EnumType.STRING)
@@ -71,6 +73,7 @@ public class MaintenanceRegister {
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
+    @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
-    private LocalDateTime updatedAt = LocalDateTime.now();
+    private LocalDateTime updatedAt;
 }
