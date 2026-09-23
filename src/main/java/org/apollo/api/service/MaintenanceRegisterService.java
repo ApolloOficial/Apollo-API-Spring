@@ -18,7 +18,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -49,7 +48,10 @@ public class MaintenanceRegisterService {
     }
 
     public MaintenanceRegisterDTO update(Long id, MaintenanceRegisterDTO dto) {
-        MaintenanceRegister register = findRegister(id); applyRelations(register, dto); applyFields(register, dto); return toDTO(maintenanceRegisterRepository.save(register));
+        MaintenanceRegister register = findRegister(id);
+        applyRelations(register, dto);
+        applyFields(register, dto);
+        return toDTO(maintenanceRegisterRepository.save(register));
     }
 
     public void delete(Long id) {
@@ -57,28 +59,44 @@ public class MaintenanceRegisterService {
     }
 
     private void applyRelations(MaintenanceRegister register, MaintenanceRegisterDTO dto) {
-        MaintenanceType type = maintenanceTypeRepository.findById(dto.getMaintenanceTypeId()).orElseThrow(() -> new ResourceNotFoundException("Tipo de manutenção não encontrado: " + dto.getMaintenanceTypeId()));
-        Batch batch = batchRepository.findByIdAndCompanyUnitCompanyId(dto.getBatchId(), companyId()).orElseThrow(() -> new ResourceNotFoundException("Lote não encontrado: " + dto.getBatchId()));
-        Employee technician = employeeRepository.findByIdAndCompanyUnitCompanyId(dto.getTechnicianId(), companyId()).orElseThrow(() -> new ResourceNotFoundException("Técnico não encontrado: " + dto.getTechnicianId()));
-        register.setMaintenanceType(type); register.setBatch(batch); register.setTechnician(technician);
-        if (dto.getParentMaintenanceId() == null) { register.setParentMaintenance(null); return; }
+        MaintenanceType type = maintenanceTypeRepository.findById(dto.getMaintenanceTypeId())
+                .orElseThrow(() -> new ResourceNotFoundException("Tipo de manutenção não encontrado: " + dto.getMaintenanceTypeId()));
+        Batch batch = batchRepository.findByIdAndCompanyUnitCompanyId(dto.getBatchId(), companyId())
+                .orElseThrow(() -> new ResourceNotFoundException("Lote não encontrado: " + dto.getBatchId()));
+        Employee technician = employeeRepository.findByIdAndCompanyUnitCompanyId(dto.getTechnicianId(), companyId())
+                .orElseThrow(() -> new ResourceNotFoundException("Técnico não encontrado: " + dto.getTechnicianId()));
+        register.setMaintenanceType(type);
+        register.setBatch(batch);
+        register.setTechnician(technician);
+        if (dto.getParentMaintenanceId() == null) {
+            register.setParentMaintenance(null);
+            return;
+        }
         MaintenanceRegister parent = findRegister(dto.getParentMaintenanceId());
         if (parent.getId().equals(register.getId())) throw new BusinessRuleException("Uma manutenção não pode ser pai de si mesma");
         register.setParentMaintenance(parent);
     }
 
     private void applyFields(MaintenanceRegister r, MaintenanceRegisterDTO dto) {
-        r.setTechnicalReport(dto.getTechnicalReport()); r.setMaintenanceStatus(dto.getMaintenanceStatus()); r.setPriority(dto.getPriority()); r.setOpeningDt(dto.getOpeningDt()); r.setDueDate(dto.getDueDate()); r.setConcludedAt(dto.getConcludedAt()); r.setEstimatedCost(dto.getEstimatedCost()); r.setActualCost(dto.getActualCost());
+        r.setTechnicalReport(dto.getTechnicalReport());
+        r.setMaintenanceStatus(dto.getMaintenanceStatus());
+        r.setPriority(dto.getPriority());
+        r.setOpeningDt(dto.getOpeningDt());
+        r.setDueDate(dto.getDueDate());
+        r.setConcludedAt(dto.getConcludedAt());
+        r.setEstimatedCost(dto.getEstimatedCost());
+        r.setActualCost(dto.getActualCost());
     }
 
     private Employee currentEmployee() {
         if (!"EMPLOYEE".equals(tenantContext.getUserType())) throw new AccessDeniedException("Somente funcionários podem abrir manutenção");
-        try { return employeeRepository.findByIdAndCompanyUnitCompanyId(UUID.fromString(tenantContext.getUserId()), companyId()).orElseThrow(() -> new AccessDeniedException("Funcionário autenticado não pertence à empresa")); }
-        catch (IllegalArgumentException ex) { throw new AccessDeniedException("Identidade de funcionário inválida"); }
+        return employeeRepository.findByIdAndCompanyUnitCompanyId(tenantContext.getUserId(), companyId())
+                .orElseThrow(() -> new AccessDeniedException("Funcionário autenticado não pertence à empresa"));
     }
 
     private MaintenanceRegister findRegister(Long id) {
-        return maintenanceRegisterRepository.findByIdAndBatchCompanyUnitCompanyId(id, companyId()).orElseThrow(() -> new ResourceNotFoundException("Manutenção não encontrada: " + id));
+        return maintenanceRegisterRepository.findByIdAndBatchCompanyUnitCompanyId(id, companyId())
+                .orElseThrow(() -> new ResourceNotFoundException("Manutenção não encontrada: " + id));
     }
 
     private Long companyId() {
@@ -86,6 +104,9 @@ public class MaintenanceRegisterService {
     }
 
     private MaintenanceRegisterDTO toDTO(MaintenanceRegister r) {
-        return new MaintenanceRegisterDTO(r.getId(), r.getParentMaintenance() == null ? null : r.getParentMaintenance().getId(), r.getMaintenanceType().getId(), r.getBatch().getId(), r.getTechnician().getId(), r.getCreatedBy().getId(), r.getTechnicalReport(), r.getMaintenanceStatus(), r.getPriority(), r.getOpeningDt(), r.getDueDate(), r.getConcludedAt(), r.getEstimatedCost(), r.getActualCost());
+        return new MaintenanceRegisterDTO(r.getId(), r.getParentMaintenance() == null ? null : r.getParentMaintenance().getId(),
+                r.getMaintenanceType().getId(), r.getBatch().getId(), r.getTechnician().getId(), r.getCreatedBy().getId(),
+                r.getTechnicalReport(), r.getMaintenanceStatus(), r.getPriority(), r.getOpeningDt(), r.getDueDate(),
+                r.getConcludedAt(), r.getEstimatedCost(), r.getActualCost());
     }
 }

@@ -3,6 +3,7 @@ package org.apollo.api.service;
 import lombok.RequiredArgsConstructor;
 import org.apollo.api.dto.EmployeeCreateDTO;
 import org.apollo.api.dto.EmployeeDTO;
+import org.apollo.api.dto.EmployeeUpdateDTO;
 import org.apollo.api.exception.BusinessRuleException;
 import org.apollo.api.exception.ResourceNotFoundException;
 import org.apollo.api.model.CompanyUnit;
@@ -18,7 +19,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -32,45 +35,56 @@ public class EmployeeService {
     private final TenantContext tenantContext;
 
     @Transactional(readOnly = true)
-    public List<EmployeeDTO> findAll() {
-        return employeeRepository.findAllByCompanyUnitCompanyId(companyId()).stream()
-                .map(this::toDTO)
-                .toList();
+    public List<EmployeeDTO> findAll(String email, String role, Boolean isActive) {
+        List<Employee> employees = employeeRepository.findAllByCompanyUnitCompanyIdAndFilters(
+                companyId(), blankToNull(email), blankToNull(role), isActive);
+        Map<Long, String> roleNames = roleNamesFor(employees);
+        return employees.stream().map(e -> toDTO(e, roleNames.get(e.getRoleId()))).toList();
     }
 
     @Transactional(readOnly = true)
     public EmployeeDTO findById(UUID id) {
-        return toDTO(findEmployee(id));
+        Employee employee = findEmployee(id);
+        return toDTO(employee, roleName(employee.getRoleId()));
     }
 
     public EmployeeDTO create(EmployeeCreateDTO dto) {
         Roles role = findRole(dto.getRoleId());
         tenantContext.requireCanAssign(role.getName());
-        CompanyUnit unit = findUnit(dto.getCompanyUnitId());
+        CompanyUnit unit = dto.getCompanyUnitId() != null ? findUnit(dto.getCompanyUnitId()) : null;
 
         Employee employee = new Employee();
         employee.setFullName(dto.getFullName());
         employee.setEmail(dto.getEmail());
         employee.setRoleId(role.getId());
-        employee.setCompanyUnitId(unit.getId());
-        employee.setIsActive(dto.getActive());
-        employee.setPasswordHash(passwordEncoder.encode(dto.getPassword()));
+        employee.setCompanyUnitId(unit != null ? unit.getId() : null);
+        employee.setIsActive(dto.getActive() != null ? dto.getActive() : true);
+        employee.setPasswordHash(passwordEncoder.encode(dto.getTemporaryPassword()));
         employee.setCreatedAt(LocalDateTime.now());
-        return toDTO(employeeRepository.save(employee));
+        return toDTO(employeeRepository.save(employee), role.getName());
     }
 
-    public EmployeeDTO update(UUID id, EmployeeDTO dto) {
+    public EmployeeDTO update(UUID id, EmployeeUpdateDTO dto) {
         Employee employee = findEmployee(id);
         Roles role = findRole(dto.getRoleId());
         tenantContext.requireCanAssign(role.getName());
-        findUnit(dto.getCompanyUnitId());
+        CompanyUnit unit = dto.getCompanyUnitId() != null ? findUnit(dto.getCompanyUnitId()) : null;
 
         employee.setFullName(dto.getFullName());
         employee.setEmail(dto.getEmail());
         employee.setRoleId(role.getId());
-        employee.setCompanyUnitId(dto.getCompanyUnitId());
+        employee.setCompanyUnitId(unit != null ? unit.getId() : null);
         employee.setIsActive(dto.getActive());
-        return toDTO(employeeRepository.save(employee));
+        return toDTO(employeeRepository.save(employee), role.getName());
+    }
+
+    public EmployeeDTO deactivate(UUID id) {
+        Employee employee = findEmployee(id);
+        if (Boolean.FALSE.equals(employee.getIsActive())) {
+            throw new BusinessRuleException("Funcionário já está inativo");
+        }
+        employee.setIsActive(false);
+        return toDTO(employeeRepository.save(employee), roleName(employee.getRoleId()));
     }
 
     public void delete(UUID id) {
@@ -83,9 +97,6 @@ public class EmployeeService {
     }
 
     private CompanyUnit findUnit(UUID unitId) {
-        if (unitId == null) {
-            throw new BusinessRuleException("Unidade é obrigatória para o funcionário");
-        }
         return companyUnitRepository.findByIdAndCompanyId(unitId, companyId())
                 .orElseThrow(() -> new ResourceNotFoundException("Unidade não encontrada: " + unitId));
     }
@@ -99,7 +110,21 @@ public class EmployeeService {
         return tenantContext.getCompanyId();
     }
 
-    private EmployeeDTO toDTO(Employee e) {
-        return new EmployeeDTO(e.getId(), e.getFullName(), e.getEmail(), e.getRoleId(), e.getCompanyUnitId(), e.getIsActive());
+    private String roleName(Long roleId) {
+        return rolesRepository.findById(roleId).map(Roles::getName).orElse(null);
+    }
+
+    private Map<Long, String> roleNamesFor(List<Employee> employees) {
+        List<Long> roleIds = employees.stream().map(Employee::getRoleId).distinct().toList();
+        return rolesRepository.findAllById(roleIds).stream()
+                .collect(Collectors.toMap(Roles::getId, Roles::getName));
+    }
+
+    private String blankToNull(String value) {
+        return (value == null || value.isBlank()) ? null : value;
+    }
+
+    private EmployeeDTO toDTO(Employee e, String roleName) {
+        return new EmployeeDTO(e.getId(), e.getFullName(), e.getEmail(), roleName, e.getCompanyUnitId(), e.getIsActive());
     }
 }
