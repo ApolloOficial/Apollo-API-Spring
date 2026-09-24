@@ -28,18 +28,20 @@ public class Employee {
     @Column(name = "password_hash", nullable = false)
     private String passwordHash;
 
-    @Column(name = "role_id", nullable = false)
-    private Long roleId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "role_id", nullable = false)
+    private Roles role;
 
-    @Column(name = "company_unit_id")
-    private UUID companyUnitId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "company_unit_id")
+    private CompanyUnit companyUnit;
 
     @Column(name = "is_active", nullable = false)
-    private Boolean isActive = true;
+    private boolean active = true;
 
     @Column(name = "fcm_token", length = 300)
     private String fcmToken;
 
-    @Column(name = "created_at", nullable = false)
-    private LocalDateTime createdAt;
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt = LocalDateTime.now();
 }
