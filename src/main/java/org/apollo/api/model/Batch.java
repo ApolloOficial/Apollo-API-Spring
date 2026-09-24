@@ -2,24 +2,30 @@ package org.apollo.api.model;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
-@Table(name = "Batch")
-@Data
+@Table(name = "batch", uniqueConstraints = @UniqueConstraint(name = "uq_batch_bill_company_unit", columnNames = {"company_unit_id", "bill_number"}))
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 public class Batch {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "company_id", nullable = false)
-    private Company company;
+    @JoinColumn(name = "company_unit_id", nullable = false)
+    private CompanyUnit companyUnit;
 
     @Column(name = "bill_number", nullable = false, length = 50)
     private String billNumber;
@@ -35,4 +41,10 @@ public class Batch {
 
     @Column(name = "panels_qtt", nullable = false)
     private Integer panelsQtt;
+
+    @Column(name = "unit_cost", precision = 12, scale = 2)
+    private BigDecimal unitCost;
+
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt = LocalDateTime.now();
 }

@@ -17,17 +17,13 @@ public class SearchRepositoryImpl implements SearchRepository {
     @PersistenceContext
     private EntityManager entityManager;
 
-    // EMPLOYEES
     @Override
-    public List<SearchResultDTO> searchEmployees(
-            String search,
-            Long companyId
-    ) {
+    public List<SearchResultDTO> searchEmployees(String search, Long companyId, int limit) {
 
         StringBuilder jpql = new StringBuilder("""
                 SELECT new org.apollo.api.dto.SearchResultDTO(
                     e.id,
-                    e.name,
+                    e.fullName,
                     'Funcionário'
                 )
                 FROM Employee e
@@ -37,38 +33,22 @@ public class SearchRepositoryImpl implements SearchRepository {
         Map<String, Object> params = new HashMap<>();
 
         jpql.append("""
-                AND e.company.id = :companyId
+                AND e.companyUnit.company.id = :companyId
                 """);
-
         params.put("companyId", companyId);
 
         jpql.append("""
-                AND LOWER(e.name) LIKE LOWER(:search)
+                AND LOWER(e.fullName) LIKE LOWER(:search)
                 """);
-
         params.put("search", "%" + search + "%");
 
-        jpql.append(" ORDER BY e.name ASC");
+        jpql.append(" ORDER BY e.fullName ASC");
 
-        TypedQuery<SearchResultDTO> query =
-                entityManager.createQuery(
-                        jpql.toString(),
-                        SearchResultDTO.class
-                );
-
-        params.forEach(query::setParameter);
-
-        query.setMaxResults(10);
-
-        return query.getResultList();
+        return runQuery(jpql.toString(), params, limit);
     }
 
-    // COMPANY UNITS
     @Override
-    public List<SearchResultDTO> searchCompanyUnits(
-            String search,
-            Long companyId
-    ) {
+    public List<SearchResultDTO> searchCompanyUnits(String search, Long companyId, int limit) {
 
         StringBuilder jpql = new StringBuilder("""
                 SELECT new org.apollo.api.dto.SearchResultDTO(
@@ -85,36 +65,20 @@ public class SearchRepositoryImpl implements SearchRepository {
         jpql.append("""
                 AND cu.company.id = :companyId
                 """);
-
         params.put("companyId", companyId);
 
         jpql.append("""
                 AND LOWER(cu.name) LIKE LOWER(:search)
                 """);
-
         params.put("search", "%" + search + "%");
 
         jpql.append(" ORDER BY cu.name ASC");
 
-        TypedQuery<SearchResultDTO> query =
-                entityManager.createQuery(
-                        jpql.toString(),
-                        SearchResultDTO.class
-                );
-
-        params.forEach(query::setParameter);
-
-        query.setMaxResults(10);
-
-        return query.getResultList();
+        return runQuery(jpql.toString(), params, limit);
     }
 
-    // BATCHES
     @Override
-    public List<SearchResultDTO> searchBatches(
-            String search,
-            Long companyId
-    ) {
+    public List<SearchResultDTO> searchBatches(String search, Long companyId, int limit) {
 
         StringBuilder jpql = new StringBuilder("""
                 SELECT new org.apollo.api.dto.SearchResultDTO(
@@ -129,9 +93,8 @@ public class SearchRepositoryImpl implements SearchRepository {
         Map<String, Object> params = new HashMap<>();
 
         jpql.append("""
-                AND b.company.id = :companyId
+                AND b.companyUnit.company.id = :companyId
                 """);
-
         params.put("companyId", companyId);
 
         jpql.append("""
@@ -141,35 +104,20 @@ public class SearchRepositoryImpl implements SearchRepository {
                     OR LOWER(b.billNumber) LIKE LOWER(:search)
                 )
                 """);
-
         params.put("search", "%" + search + "%");
 
-        jpql.append(" ORDER BY b.id DESC");
+        jpql.append(" ORDER BY b.createdAt DESC");
 
-        TypedQuery<SearchResultDTO> query =
-                entityManager.createQuery(
-                        jpql.toString(),
-                        SearchResultDTO.class
-                );
-
-        params.forEach(query::setParameter);
-
-        query.setMaxResults(10);
-
-        return query.getResultList();
+        return runQuery(jpql.toString(), params, limit);
     }
 
-    // INTERNAL RELOCATIONS
     @Override
-    public List<SearchResultDTO> searchInternalRelocations(
-            String search,
-            Long companyId
-    ) {
+    public List<SearchResultDTO> searchInternalRelocations(String search, Long companyId, int limit) {
 
         StringBuilder jpql = new StringBuilder("""
                 SELECT new org.apollo.api.dto.SearchResultDTO(
                     r.id,
-                    r.name,
+                    r.justification,
                     'Realocação interna'
                 )
                 FROM SuggestedInternalRelocation r
@@ -179,43 +127,27 @@ public class SearchRepositoryImpl implements SearchRepository {
         Map<String, Object> params = new HashMap<>();
 
         jpql.append("""
-                AND r.company.id = :companyId
+                AND r.batch.companyUnit.company.id = :companyId
                 """);
-
         params.put("companyId", companyId);
 
         jpql.append("""
-                AND LOWER(r.name) LIKE LOWER(:search)
+                AND LOWER(r.justification) LIKE LOWER(:search)
                 """);
-
         params.put("search", "%" + search + "%");
 
         jpql.append(" ORDER BY r.id DESC");
 
-        TypedQuery<SearchResultDTO> query =
-                entityManager.createQuery(
-                        jpql.toString(),
-                        SearchResultDTO.class
-                );
-
-        params.forEach(query::setParameter);
-
-        query.setMaxResults(10);
-
-        return query.getResultList();
+        return runQuery(jpql.toString(), params, limit);
     }
 
-    // EXTERNAL RELOCATIONS
     @Override
-    public List<SearchResultDTO> searchExternalRelocations(
-            String search,
-            Long companyId
-    ) {
+    public List<SearchResultDTO> searchExternalRelocations(String search, Long companyId, int limit) {
 
         StringBuilder jpql = new StringBuilder("""
                 SELECT new org.apollo.api.dto.SearchResultDTO(
                     r.id,
-                    r.name,
+                    r.justification,
                     'Realocação externa'
                 )
                 FROM SuggestedExternalRelocation r
@@ -225,29 +157,24 @@ public class SearchRepositoryImpl implements SearchRepository {
         Map<String, Object> params = new HashMap<>();
 
         jpql.append("""
-                AND r.company.id = :companyId
+                AND r.panel.batch.companyUnit.company.id = :companyId
                 """);
-
         params.put("companyId", companyId);
 
         jpql.append("""
-                AND LOWER(r.name) LIKE LOWER(:search)
+                AND LOWER(r.justification) LIKE LOWER(:search)
                 """);
-
         params.put("search", "%" + search + "%");
 
         jpql.append(" ORDER BY r.id DESC");
 
-        TypedQuery<SearchResultDTO> query =
-                entityManager.createQuery(
-                        jpql.toString(),
-                        SearchResultDTO.class
-                );
+        return runQuery(jpql.toString(), params, limit);
+    }
 
+    private List<SearchResultDTO> runQuery(String jpql, Map<String, Object> params, int limit) {
+        TypedQuery<SearchResultDTO> query = entityManager.createQuery(jpql, SearchResultDTO.class);
         params.forEach(query::setParameter);
-
-        query.setMaxResults(10);
-
+        query.setMaxResults(limit);
         return query.getResultList();
     }
 }

@@ -23,6 +23,7 @@ import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -89,15 +90,15 @@ class SecurityConfigTest {
 
     private void authenticate(String token, String roleName) {
         String email = roleName.toLowerCase() + "@apollo.com";
+        UUID userId = UUID.randomUUID();
         AuthUser user = mock(AuthUser.class);
-        when(user.getUserId()).thenReturn(1L);
+        when(user.getUserId()).thenReturn(userId);
         when(user.getCompanyId()).thenReturn(10L);
-        when(user.getUserType()).thenReturn("ADMINISTRATOR");
         when(user.getEmail()).thenReturn(email);
         when(user.isActive()).thenReturn(true);
         when(user.getRole()).thenReturn(new Roles(1L, roleName, null));
-        when(jwtService.extractAuthentication(token)).thenReturn(new JwtAuthenticationData(1L, 10L, "ADMINISTRATOR", email));
-        when(authUserRepository.findActiveByIdentity(1L, 10L, "ADMINISTRATOR", email))
+        when(jwtService.extractAuthentication(token)).thenReturn(new JwtAuthenticationData(userId, 10L, email, roleName, null));
+        when(authUserRepository.findActiveByIdentity(userId, 10L, email))
                 .thenReturn(Optional.of(user));
     }
 

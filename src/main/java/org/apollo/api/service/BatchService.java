@@ -5,60 +5,62 @@ import org.apollo.api.dto.BatchDTO;
 import org.apollo.api.exception.BusinessRuleException;
 import org.apollo.api.exception.ResourceNotFoundException;
 import org.apollo.api.model.Batch;
-import org.apollo.api.model.Company;
+import org.apollo.api.model.CompanyUnit;
 import org.apollo.api.repository.BatchRepository;
-import org.apollo.api.repository.CompanyRepository;
+import org.apollo.api.repository.CompanyUnitRepository;
 import org.apollo.api.security.TenantContext;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class BatchService {
-
     private final BatchRepository batchRepository;
-    private final CompanyRepository companyRepository;
+    private final CompanyUnitRepository companyUnitRepository;
     private final TenantContext tenantContext;
 
-    public List<BatchDTO> findAll() {
-        return batchRepository.findAllByCompanyId(companyId()).stream().map(this::toDTO).toList();
-    }
-
-    public BatchDTO findById(Long id) {
-        return toDTO(findBatch(id));
-    }
+    @Transactional(readOnly = true)
+    public List<BatchDTO> findAll() { return batchRepository.findAllByCompanyUnitCompanyId(companyId()).stream().map(this::toDTO).toList(); }
+    @Transactional(readOnly = true)
+    public BatchDTO findById(UUID id) { return toDTO(findBatch(id)); }
 
     public BatchDTO create(BatchDTO dto) {
-        Long companyId = companyId();
-        if (batchRepository.existsByCompanyIdAndBillNumber(companyId, dto.getBillNumber())) {
-            throw new BusinessRuleException("Já existe lote com esta nota fiscal nesta empresa");
-        }
-
-        Company company = companyRepository.findById(companyId)
-                .orElseThrow(() -> new ResourceNotFoundException("Empresa não encontrada: " + companyId));
+        CompanyUnit unit = findUnit(dto.getCompanyUnitId());
+        validateBillNumber(unit.getId(), dto.getBillNumber(), null);
         Batch batch = new Batch();
-        batch.setCompany(company);
+        batch.setCompanyUnit(unit);
         updateFields(batch, dto);
         return toDTO(batchRepository.save(batch));
     }
 
-    public BatchDTO update(Long id, BatchDTO dto) {
+    public BatchDTO update(UUID id, BatchDTO dto) {
         Batch batch = findBatch(id);
-        if (batchRepository.existsByCompanyIdAndBillNumberAndIdNot(companyId(), dto.getBillNumber(), id)) {
-            throw new BusinessRuleException("Já existe lote com esta nota fiscal nesta empresa");
-        }
+        CompanyUnit unit = findUnit(dto.getCompanyUnitId());
+        validateBillNumber(unit.getId(), dto.getBillNumber(), id);
+        batch.setCompanyUnit(unit);
         updateFields(batch, dto);
         return toDTO(batchRepository.save(batch));
     }
 
-    public void delete(Long id) {
-        batchRepository.delete(findBatch(id));
+    public void delete(UUID id) { batchRepository.delete(findBatch(id)); }
+
+    private void validateBillNumber(UUID unitId, String billNumber, UUID batchId) {
+        boolean exists = batchId == null
+                ? batchRepository.existsByCompanyUnitIdAndBillNumber(unitId, billNumber)
+                : batchRepository.existsByCompanyUnitIdAndBillNumberAndIdNot(unitId, billNumber, batchId);
+        if (exists) throw new BusinessRuleException("Já existe lote com esta nota fiscal nesta unidade");
     }
 
-    private Batch findBatch(Long id) {
-        return batchRepository.findByIdAndCompanyId(id, companyId())
-                .orElseThrow(() -> new ResourceNotFoundException("Lote não encontrado: " + id));
+    private Batch findBatch(UUID id) {
+        return batchRepository.findByIdAndCompanyUnitCompanyId(id, companyId()).orElseThrow(() -> new ResourceNotFoundException("Lote não encontrado: " + id));
+    }
+
+    private CompanyUnit findUnit(UUID id) {
+        return companyUnitRepository.findByIdAndCompanyId(id, companyId()).orElseThrow(() -> new ResourceNotFoundException("Unidade não encontrada: " + id));
     }
 
     private Long companyId() {
@@ -66,22 +68,10 @@ public class BatchService {
     }
 
     private void updateFields(Batch batch, BatchDTO dto) {
-        batch.setBillNumber(dto.getBillNumber());
-        batch.setManufacturer(dto.getManufacturer());
-        batch.setModel(dto.getModel());
-        batch.setAcquisitionDt(dto.getAcquisitionDt());
-        batch.setPanelsQtt(dto.getPanelsQtt());
+        batch.setBillNumber(dto.getBillNumber()); batch.setManufacturer(dto.getManufacturer()); batch.setModel(dto.getModel()); batch.setAcquisitionDt(dto.getAcquisitionDt()); batch.setPanelsQtt(dto.getPanelsQtt()); batch.setUnitCost(dto.getUnitCost());
     }
 
     private BatchDTO toDTO(Batch batch) {
-        return new BatchDTO(
-                batch.getId(),
-                batch.getCompany().getId(),
-                batch.getBillNumber(),
-                batch.getManufacturer(),
-                batch.getModel(),
-                batch.getAcquisitionDt(),
-                batch.getPanelsQtt()
-        );
+        return new BatchDTO(batch.getId(), batch.getCompanyUnit().getId(), batch.getBillNumber(), batch.getManufacturer(), batch.getModel(), batch.getAcquisitionDt(), batch.getPanelsQtt(), batch.getUnitCost(), batch.getCreatedAt());
     }
 }

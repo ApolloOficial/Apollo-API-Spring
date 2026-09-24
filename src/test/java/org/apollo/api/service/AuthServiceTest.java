@@ -4,6 +4,7 @@ import org.apollo.api.dto.LoginRequestDTO;
 import org.apollo.api.dto.LoginResponseDTO;
 import org.apollo.api.model.Roles;
 import org.apollo.api.repository.AuthUserRepository;
+import org.apollo.api.repository.EmployeeRepository;
 import org.apollo.api.security.AuthUser;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -15,10 +16,11 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
-import java.util.Optional;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -27,6 +29,9 @@ class AuthServiceTest {
 
     @Mock
     private AuthUserRepository authUserRepository;
+
+    @Mock
+    private EmployeeRepository employeeRepository;
 
     @Mock
     private PasswordEncoder passwordEncoder;
@@ -38,13 +43,13 @@ class AuthServiceTest {
     private AuthService authService;
 
     @Test
-    void shouldReturnBearerTokenWhenCredentialsAreValidForTenant() {
-        LoginRequestDTO request = new LoginRequestDTO(10L, "admin@apollo.com", "password");
+    void shouldReturnBearerTokenWhenCredentialsAreValid() {
+        LoginRequestDTO request = new LoginRequestDTO("admin@apollo.com", "password");
         AuthUser authUser = authenticatedUser();
-        when(authUserRepository.findActiveByCompanyIdAndEmail(10L, "admin@apollo.com"))
+        when(authUserRepository.findActiveByEmail("admin@apollo.com"))
                 .thenReturn(List.of(authUser));
         when(passwordEncoder.matches("password", "encoded-password")).thenReturn(true);
-        when(jwtService.generateToken(org.mockito.ArgumentMatchers.any())).thenReturn("generated-token");
+        when(jwtService.generateToken(any())).thenReturn("generated-token");
 
         LoginResponseDTO response = authService.login(request);
 
@@ -53,9 +58,9 @@ class AuthServiceTest {
     }
 
     @Test
-    void shouldRejectCredentialsFromAnotherTenant() {
-        LoginRequestDTO request = new LoginRequestDTO(20L, "admin@apollo.com", "password");
-        when(authUserRepository.findActiveByCompanyIdAndEmail(20L, "admin@apollo.com"))
+    void shouldRejectUnknownEmail() {
+        LoginRequestDTO request = new LoginRequestDTO("ghost@apollo.com", "password");
+        when(authUserRepository.findActiveByEmail("ghost@apollo.com"))
                 .thenReturn(List.of());
 
         ResponseStatusException exception = assertThrows(ResponseStatusException.class, () -> authService.login(request));
@@ -66,11 +71,10 @@ class AuthServiceTest {
 
     private AuthUser authenticatedUser() {
         AuthUser user = mock(AuthUser.class);
-        when(user.getUserId()).thenReturn(1L);
+        when(user.getUserId()).thenReturn(UUID.fromString("00000000-0000-0000-0000-000000000001"));
         when(user.getCompanyId()).thenReturn(10L);
-        when(user.getUserType()).thenReturn("ADMINISTRATOR");
         when(user.getEmail()).thenReturn("admin@apollo.com");
-        when(user.getPassword()).thenReturn("encoded-password");
+        when(user.getPasswordHash()).thenReturn("encoded-password");
         when(user.isActive()).thenReturn(true);
         when(user.getRole()).thenReturn(new Roles(1L, "ADMINISTRATOR", null));
         return user;

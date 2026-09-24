@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
 import java.util.Date;
+import java.util.UUID;
 
 @Service
 public class JwtService {
@@ -44,9 +45,10 @@ public class JwtService {
                 .subject(user.getUsername())
                 .issuer(issuer)
                 .audience().add(audience).and()
-                .claim("userId", user.getUserId())
+                .claim("userId", user.getUserId().toString())
                 .claim("companyId", user.getCompanyId())
-                .claim("userType", user.getUserType())
+                .claim("role", user.getRoleName())
+                .claim("companyUnitId", user.getCompanyUnitId() != null ? user.getCompanyUnitId().toString() : null)
                 .issuedAt(issuedAt)
                 .expiration(new Date(issuedAt.getTime() + expirationMs))
                 .signWith(signingKey)
@@ -62,14 +64,30 @@ public class JwtService {
                 .parseSignedClaims(token)
                 .getPayload();
 
-        Long userId = getRequiredLong(claims, "userId");
+        UUID userId = getRequiredUUID(claims, "userId");
         Long companyId = getRequiredLong(claims, "companyId");
-        String userType = claims.get("userType", String.class);
+        String role = claims.get("role", String.class);
         String email = claims.getSubject();
-        if (userType == null || userType.isBlank() || email == null || email.isBlank()) {
+        if (role == null || role.isBlank() || email == null || email.isBlank()) {
             throw new IllegalArgumentException("JWT sem identidade obrigatória");
         }
-        return new JwtAuthenticationData(userId, companyId, userType, email);
+        String companyUnitIdClaim = claims.get("companyUnitId", String.class);
+        UUID companyUnitId = (companyUnitIdClaim == null || companyUnitIdClaim.isBlank())
+                ? null : UUID.fromString(companyUnitIdClaim);
+
+        return new JwtAuthenticationData(userId, companyId, email, role, companyUnitId);
+    }
+
+    private UUID getRequiredUUID(Claims claims, String claim) {
+        Object value = claims.get(claim);
+        if (value == null || value.toString().isBlank()) {
+            throw new IllegalArgumentException("JWT sem claim obrigatória: " + claim);
+        }
+        try {
+            return UUID.fromString(value.toString());
+        } catch (IllegalArgumentException ex) {
+            throw new IllegalArgumentException("JWT com claim inválida: " + claim);
+        }
     }
 
     private Long getRequiredLong(Claims claims, String claim) {

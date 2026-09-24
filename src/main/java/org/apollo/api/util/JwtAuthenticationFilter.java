@@ -49,7 +49,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             authUserRepository.findActiveByIdentity(
                             tokenData.userId(),
                             tokenData.companyId(),
-                            tokenData.userType(),
                             tokenData.email()
                     )
                     .map(AuthenticatedUser::new)
@@ -61,9 +60,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private void setAuthentication(AuthenticatedUser user, HttpServletRequest request) {
         UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                user,
-                null,
-                user.getAuthorities()
+                user, null, user.getAuthorities()
         );
         authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
         SecurityContextHolder.getContext().setAuthentication(authentication);

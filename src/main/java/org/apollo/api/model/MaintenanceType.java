@@ -6,7 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "Maintenance_Type")
+@Table(name = "maintenance_type")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -21,4 +21,7 @@ public class MaintenanceType {
 
     @Column(name = "description")
     private String description;
+
+    @Column(name = "default_interval_days")
+    private Integer defaultIntervalDays;
 }

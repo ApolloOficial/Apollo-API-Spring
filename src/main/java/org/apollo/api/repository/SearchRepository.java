@@ -6,28 +6,13 @@ import java.util.List;
 
 public interface SearchRepository {
 
-    List<SearchResultDTO> searchEmployees(
-            String search,
-            Long companyId
-    );
+    List<SearchResultDTO> searchEmployees(String search, Long companyId, int limit);
 
-    List<SearchResultDTO> searchCompanyUnits(
-            String search,
-            Long companyId
-    );
+    List<SearchResultDTO> searchCompanyUnits(String search, Long companyId, int limit);
 
-    List<SearchResultDTO> searchBatches(
-            String search,
-            Long companyId
-    );
+    List<SearchResultDTO> searchBatches(String search, Long companyId, int limit);
 
-    List<SearchResultDTO> searchInternalRelocations(
-            String search,
-            Long companyId
-    );
+    List<SearchResultDTO> searchInternalRelocations(String search, Long companyId, int limit);
 
-    List<SearchResultDTO> searchExternalRelocations(
-            String search,
-            Long companyId
-    );
+    List<SearchResultDTO> searchExternalRelocations(String search, Long companyId, int limit);
 }

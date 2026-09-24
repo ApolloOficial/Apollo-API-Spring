@@ -1,4 +1,6 @@
 package org.apollo.api.security;
 
-public record JwtAuthenticationData(Long userId, Long companyId, String userType, String email) {
+import java.util.UUID;
+
+public record JwtAuthenticationData(UUID userId, Long companyId, String email, String role, UUID companyUnitId) {
 }
