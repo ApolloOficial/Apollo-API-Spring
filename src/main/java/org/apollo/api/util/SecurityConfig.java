@@ -55,7 +55,7 @@ public class SecurityConfig {
                 }))
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/api/v1/auth/login").permitAll()
-                        .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**", "/v3/api-docs.yaml").permi
+                        .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**", "/v3/api-docs.yaml").permitAll()
                         .requestMatchers("/api/v1/companies/**", "/api/v1/roles/**", "/api/v1/segments/**").hasRole("SUPER_ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/v1/users/**", "/api/v1/employees/**").hasRole("ADMINISTRATOR")
                         .requestMatchers(HttpMethod.PUT, "/api/v1/users/**", "/api/v1/employees/**").hasRole("ADMINISTRATOR")
