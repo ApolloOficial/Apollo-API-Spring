@@ -34,7 +34,7 @@ public class SecurityConfig {
     @Bean
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:3000", "http://localhost:4200"));
+        configuration.setAllowedOrigins(List.of("http://localhost:3000", "http://localhost:4200", "http://localhost:5173"));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type"));
         configuration.setAllowCredentials(true);
@@ -55,7 +55,7 @@ public class SecurityConfig {
                 }))
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/api/v1/auth/login").permitAll()
-                        .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").hasRole("SUPER_ADMIN")
+                        .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**", "/v3/api-docs.yaml").permitAll()
                         .requestMatchers("/api/v1/companies/**", "/api/v1/roles/**", "/api/v1/segments/**").hasRole("SUPER_ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/v1/users/**", "/api/v1/employees/**").hasRole("ADMINISTRATOR")
                         .requestMatchers(HttpMethod.PUT, "/api/v1/users/**", "/api/v1/employees/**").hasRole("ADMINISTRATOR")
@@ -64,7 +64,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/**").hasAnyRole("OPERATOR", "ADMINISTRATOR", "SUPER_ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/**").hasAnyRole("OPERATOR", "ADMINISTRATOR", "SUPER_ADMIN")
                         .requestMatchers(HttpMethod.PATCH, "/api/**").hasAnyRole("OPERATOR", "ADMINISTRATOR", "SUPER_ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/api/**").hasAnyRole("OPERATOR", "ANALYST", "TECHNICIAN", "ADMINISTRATOR", "SUPER_ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/**").hasAnyRole("OPERATOR", "ANALYST", "GERENTE", "TECHNICIAN", "ADMINISTRATOR", "SUPER_ADMIN")
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();

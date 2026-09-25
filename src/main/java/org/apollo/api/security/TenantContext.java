@@ -65,10 +65,11 @@ public class TenantContext {
 
     private int roleRank(String role) {
         return switch (role) {
-            case "SUPER_ADMIN" -> 5;
-            case "ADMINISTRATOR" -> 4;
-            case "OPERATOR" -> 3;
-            case "ANALYST" -> 2;
+            case "SUPER_ADMIN" -> 6;
+            case "ADMINISTRATOR" -> 5;
+            case "OPERATOR" -> 4;
+            case "ANALYST" -> 3;
+            case "MANAGER" -> 2;
             case "TECHNICIAN" -> 1;
             default -> 0;
         };

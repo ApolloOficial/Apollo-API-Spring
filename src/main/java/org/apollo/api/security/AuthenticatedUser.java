@@ -38,6 +38,7 @@ public class AuthenticatedUser implements UserDetails {
             case "ADMINISTRADOR", "ADMINISTRATOR" -> "ADMINISTRATOR";
             case "OPERADOR", "OPERATOR" -> "OPERATOR";
             case "ANALISTA", "ANALYST" -> "ANALYST";
+            case "GERENTE", "MANAGER" -> "GERENTE";
             case "TECNICO", "TECHNICIAN" -> "TECHNICIAN";
             case "SUPER_ADMIN" -> "SUPER_ADMIN";
             default -> throw new IllegalArgumentException("Perfil não reconhecido");

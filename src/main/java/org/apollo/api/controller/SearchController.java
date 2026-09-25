@@ -1,5 +1,6 @@
 package org.apollo.api.controller;
 
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.RequiredArgsConstructor;
 import org.apollo.api.dto.SearchResponseDTO;
 import org.apollo.api.dto.SearchSuggestionResponseDTO;
@@ -10,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/v1/search")
 @RequiredArgsConstructor
+@SecurityRequirement(name = "bearer-key")
 public class SearchController {
 
     private final org.apollo.api.service.SearchService searchService;
