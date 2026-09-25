@@ -21,25 +21,26 @@ public class SearchRepositoryImpl implements SearchRepository {
     public List<SearchResultDTO> searchEmployees(String search, Long companyId, int limit) {
 
         StringBuilder jpql = new StringBuilder("""
-                SELECT new org.apollo.api.dto.SearchResultDTO(
-                    e.id,
-                    e.fullName,
-                    'Funcionário'
-                )
-                FROM Employee e
-                WHERE 1 = 1
-                """);
+            SELECT new org.apollo.api.dto.SearchResultDTO(
+                e.id,
+                e.fullName,
+                'Funcionário'
+            )
+            FROM Employee e
+            JOIN CompanyUnit cu ON cu.id = e.companyUnitId
+            WHERE 1 = 1
+            """);
 
         Map<String, Object> params = new HashMap<>();
 
         jpql.append("""
-                AND e.companyUnit.company.id = :companyId
-                """);
+            AND cu.company.id = :companyId
+            """);
         params.put("companyId", companyId);
 
         jpql.append("""
-                AND LOWER(e.fullName) LIKE LOWER(:search)
-                """);
+            AND LOWER(e.fullName) LIKE LOWER(:search)
+            """);
         params.put("search", "%" + search + "%");
 
         jpql.append(" ORDER BY e.fullName ASC");
