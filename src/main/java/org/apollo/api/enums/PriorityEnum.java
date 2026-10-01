@@ -2,7 +2,7 @@ package org.apollo.api.enums;
 
 public enum PriorityEnum {
     BAIXA,
-    MÉDIA,
+    MEDIA,
     ALTA,
-    CRÍTICA
+    CRITICA
 }

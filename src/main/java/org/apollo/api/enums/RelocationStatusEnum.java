@@ -4,5 +4,5 @@ public enum RelocationStatusEnum {
     PENDENTE,
     APROVADA,
     REJEITADA,
-    CONCLUÍDA
+    CONCLUIDA
 }
