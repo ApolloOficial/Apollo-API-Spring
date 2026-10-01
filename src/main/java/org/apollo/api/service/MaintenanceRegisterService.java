@@ -1,37 +1,79 @@
 package org.apollo.api.service;
 
+import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
+import org.apollo.api.dto.MaintenanceCancelDTO;
+import org.apollo.api.dto.MaintenanceCompleteDTO;
+import org.apollo.api.dto.MaintenanceCreateDTO;
+import org.apollo.api.dto.MaintenancePartCreateDTO;
+import org.apollo.api.dto.MaintenancePartDTO;
 import org.apollo.api.dto.MaintenanceRegisterDTO;
+import org.apollo.api.enums.MaintenanceStatusEnum;
+import org.apollo.api.enums.PriorityEnum;
 import org.apollo.api.exception.BusinessRuleException;
 import org.apollo.api.exception.ResourceNotFoundException;
-import org.apollo.api.model.Batch;
-import org.apollo.api.model.Employee;
+import org.apollo.api.model.Inverter;
+import org.apollo.api.model.MaintenancePart;
 import org.apollo.api.model.MaintenanceRegister;
-import org.apollo.api.model.MaintenanceType;
-import org.apollo.api.repository.BatchRepository;
-import org.apollo.api.repository.EmployeeRepository;
+import org.apollo.api.model.Panel;
+import org.apollo.api.model.PanelString;
+import org.apollo.api.model.Warning;
+import org.apollo.api.repository.MaintenancePartRepository;
 import org.apollo.api.repository.MaintenanceRegisterRepository;
-import org.apollo.api.repository.MaintenanceTypeRepository;
+import org.apollo.api.repository.PartRepository;
 import org.apollo.api.security.TenantContext;
-import org.springframework.security.access.AccessDeniedException;
+import org.apollo.api.util.DbProcedures;
+import org.apollo.api.util.Scope;
+import org.apollo.api.util.Specs;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
+/**
+ * Ordens de servico. Abrir, iniciar, concluir e cancelar passam pelas procedures do banco
+ * (pr_open_maintenance, pr_start_maintenance, pr_complete_maintenance, pr_cancel_maintenance),
+ * que tambem atualizam o status do alerta, da string e das placas.
+ */
 @Service
 @RequiredArgsConstructor
 @Transactional
 public class MaintenanceRegisterService {
+
     private final MaintenanceRegisterRepository maintenanceRegisterRepository;
-    private final MaintenanceTypeRepository maintenanceTypeRepository;
-    private final BatchRepository batchRepository;
-    private final EmployeeRepository employeeRepository;
+    private final MaintenancePartRepository maintenancePartRepository;
+    private final PartRepository partRepository;
+    private final WarningService warningService;
+    private final EntityManager entityManager;
+    private final DbProcedures procedures;
     private final TenantContext tenantContext;
 
     @Transactional(readOnly = true)
-    public List<MaintenanceRegisterDTO> findAll() {
-        return maintenanceRegisterRepository.findAllByBatchCompanyUnitCompanyId(companyId()).stream().map(this::toDTO).toList();
+    public Page<MaintenanceRegisterDTO> findAll(Long id, UUID technicianId, Long maintenanceTypeId,
+                                                MaintenanceStatusEnum status, PriorityEnum priority,
+                                                Boolean thisMonth, Boolean overdue, UUID companyUnitId,
+                                                Pageable pageable) {
+        Specification<MaintenanceRegister> spec = Specification
+                .where(inCompany(companyId()))
+                .and(Specs.<MaintenanceRegister>equalTo(m -> m.get("id"), id))
+                .and(Specs.<MaintenanceRegister>equalTo(m -> m.get("technician").get("id"), technicianId))
+                .and(Specs.<MaintenanceRegister>equalTo(m -> m.get("maintenanceType").get("id"), maintenanceTypeId))
+                .and(Specs.<MaintenanceRegister>equalTo(m -> m.get("maintenanceStatus"), status))
+                .and(priority == null ? null : withSeverity(priority))
+                .and(companyUnitId == null ? null : inUnit(companyUnitId))
+                .and(Boolean.TRUE.equals(thisMonth) ? openedThisMonth() : null)
+                .and(Boolean.TRUE.equals(overdue) ? isOverdue() : null);
+        Page<MaintenanceRegister> page = maintenanceRegisterRepository.findAll(spec, pageable);
+        Map<Long, BigDecimal> partsCost = partsCostFor(page.getContent());
+        return page.map(m -> toDTO(m, partsCost.getOrDefault(m.getId(), BigDecimal.ZERO)));
     }
 
     @Transactional(readOnly = true)
@@ -39,74 +81,163 @@ public class MaintenanceRegisterService {
         return toDTO(findRegister(id));
     }
 
-    public MaintenanceRegisterDTO create(MaintenanceRegisterDTO dto) {
-        MaintenanceRegister register = new MaintenanceRegister();
-        register.setCreatedBy(currentEmployee());
-        applyRelations(register, dto);
-        applyFields(register, dto);
-        return toDTO(maintenanceRegisterRepository.save(register));
+    /** O operador abre a OS a partir de um alerta ATIVO e escolhe o tecnico. */
+    public MaintenanceRegisterDTO create(MaintenanceCreateDTO dto) {
+        warningService.findById(dto.warningId()); // 404 se o alerta nao for da empresa do usuario
+        Long id = procedures.openMaintenance(dto.warningId(), tenantContext.getUserId(), dto.technicianId(),
+                dto.maintenanceTypeId(), dto.dueDate(), dto.estimatedCost(), dto.parentMaintenanceId());
+        return reload(id);
     }
 
-    public MaintenanceRegisterDTO update(Long id, MaintenanceRegisterDTO dto) {
+    /** Tecnico responsavel inicia a OS. */
+    public MaintenanceRegisterDTO start(Long id) {
         MaintenanceRegister register = findRegister(id);
-        applyRelations(register, dto);
-        applyFields(register, dto);
-        return toDTO(maintenanceRegisterRepository.save(register));
+        requireAssignedTechnician(register);
+        procedures.startMaintenance(id, tenantContext.getUserId());
+        return reload(id);
     }
 
-    public void delete(Long id) {
-        maintenanceRegisterRepository.delete(findRegister(id));
+    /** Tecnico responsavel conclui a OS com o laudo tecnico. */
+    public MaintenanceRegisterDTO complete(Long id, MaintenanceCompleteDTO dto) {
+        MaintenanceRegister register = findRegister(id);
+        requireAssignedTechnician(register);
+        procedures.completeMaintenance(id, tenantContext.getUserId(), dto.technicalReport(), dto.laborCost());
+        return reload(id);
     }
 
-    private void applyRelations(MaintenanceRegister register, MaintenanceRegisterDTO dto) {
-        MaintenanceType type = maintenanceTypeRepository.findById(dto.getMaintenanceTypeId())
-                .orElseThrow(() -> new ResourceNotFoundException("Tipo de manutenção não encontrado: " + dto.getMaintenanceTypeId()));
-        Batch batch = batchRepository.findByIdAndCompanyUnitCompanyId(dto.getBatchId(), companyId())
-                .orElseThrow(() -> new ResourceNotFoundException("Lote não encontrado: " + dto.getBatchId()));
-        Employee technician = employeeRepository.findByIdAndCompanyUnitCompanyId(dto.getTechnicianId(), companyId())
-                .orElseThrow(() -> new ResourceNotFoundException("Técnico não encontrado: " + dto.getTechnicianId()));
-        register.setMaintenanceType(type);
-        register.setBatch(batch);
-        register.setTechnician(technician);
-        if (dto.getParentMaintenanceId() == null) {
-            register.setParentMaintenance(null);
-            return;
+    /** Operador cancela a OS informando o motivo. */
+    public MaintenanceRegisterDTO cancel(Long id, MaintenanceCancelDTO dto) {
+        findRegister(id);
+        procedures.cancelMaintenance(id, tenantContext.getUserId(), dto.reason());
+        return reload(id);
+    }
+
+    @Transactional(readOnly = true)
+    public List<MaintenancePartDTO> parts(Long id) {
+        findRegister(id);
+        return maintenancePartRepository.findByMaintenanceId(id).stream().map(this::toPartDTO).toList();
+    }
+
+    /** Lanca uma peca na OS; o banco baixa o estoque da filial (e valida status e saldo). */
+    public List<MaintenancePartDTO> addPart(Long id, MaintenancePartCreateDTO dto) {
+        MaintenanceRegister register = findRegister(id);
+        if (tenantContext.getRoleName().equals("TECHNICIAN")) {
+            requireAssignedTechnician(register);
         }
-        MaintenanceRegister parent = findRegister(dto.getParentMaintenanceId());
-        if (parent.getId().equals(register.getId())) throw new BusinessRuleException("Uma manutenção não pode ser pai de si mesma");
-        register.setParentMaintenance(parent);
+        if (!partRepository.existsById(dto.partId())) {
+            throw new ResourceNotFoundException("Part not found: " + dto.partId());
+        }
+        if (maintenancePartRepository.findByMaintenanceId(id).stream()
+                .anyMatch(p -> p.getId().getPartId().equals(dto.partId()))) {
+            throw new BusinessRuleException("This part is already listed in the service order");
+        }
+        procedures.addMaintenancePart(id, dto.partId(), dto.quantity());
+        return maintenancePartRepository.findByMaintenanceId(id).stream().map(this::toPartDTO).toList();
     }
 
-    private void applyFields(MaintenanceRegister r, MaintenanceRegisterDTO dto) {
-        r.setTechnicalReport(dto.getTechnicalReport());
-        r.setMaintenanceStatus(dto.getMaintenanceStatus());
-        r.setPriority(dto.getPriority());
-        r.setOpeningDt(dto.getOpeningDt());
-        r.setDueDate(dto.getDueDate());
-        r.setConcludedAt(dto.getConcludedAt());
-        r.setEstimatedCost(dto.getEstimatedCost());
-        r.setActualCost(dto.getActualCost());
-    }
+    // ------------------------------------------------------------------ helpers
 
-    private Employee currentEmployee() {
-        if (!"EMPLOYEE".equals(tenantContext.getUserType())) throw new AccessDeniedException("Somente funcionários podem abrir manutenção");
-        return employeeRepository.findByIdAndCompanyUnitCompanyId(tenantContext.getUserId(), companyId())
-                .orElseThrow(() -> new AccessDeniedException("Funcionário autenticado não pertence à empresa"));
+    // As procedures alteram linhas direto no banco: descarrega e limpa o cache da sessao
+    // antes de reler, senao a resposta mostraria o estado antigo da OS/alerta/placas.
+    private MaintenanceRegisterDTO reload(Long id) {
+        entityManager.flush();
+        entityManager.clear();
+        return toDTO(findRegister(id));
     }
 
     private MaintenanceRegister findRegister(Long id) {
-        return maintenanceRegisterRepository.findByIdAndBatchCompanyUnitCompanyId(id, companyId())
-                .orElseThrow(() -> new ResourceNotFoundException("Manutenção não encontrada: " + id));
+        Specification<MaintenanceRegister> spec = Specification
+                .where(inCompany(companyId()))
+                .and(Specs.<MaintenanceRegister>equalTo(m -> m.get("id"), id));
+        return maintenanceRegisterRepository.findOne(spec)
+                .orElseThrow(() -> new ResourceNotFoundException("Service order not found: " + id));
+    }
+
+    private void requireAssignedTechnician(MaintenanceRegister register) {
+        if (!register.getTechnician().getId().equals(tenantContext.getUserId())) {
+            throw new BusinessRuleException("This service order is assigned to another technician");
+        }
+    }
+
+    private Specification<MaintenanceRegister> inCompany(Long companyId) {
+        return (root, query, cb) -> Scope.warningInCompany(cb, root.join("warning"), companyId);
+    }
+
+    private Specification<MaintenanceRegister> inUnit(UUID unitId) {
+        return (root, query, cb) -> Scope.warningInUnit(cb, root.join("warning"), unitId);
+    }
+
+    private Specification<MaintenanceRegister> withSeverity(PriorityEnum severity) {
+        return (root, query, cb) -> cb.equal(root.join("warning").get("severity"), severity);
+    }
+
+    private Specification<MaintenanceRegister> openedThisMonth() {
+        LocalDateTime start = DbProcedures.today().withDayOfMonth(1).atStartOfDay();
+        LocalDateTime end = start.plusMonths(1);
+        return (root, query, cb) -> cb.and(
+                cb.greaterThanOrEqualTo(root.<LocalDateTime>get("openingDt"), start),
+                cb.lessThan(root.<LocalDateTime>get("openingDt"), end));
+    }
+
+    private Specification<MaintenanceRegister> isOverdue() {
+        LocalDateTime now = DbProcedures.now();
+        return (root, query, cb) -> cb.and(
+                cb.isNotNull(root.get("dueDate")),
+                cb.lessThan(root.<LocalDateTime>get("dueDate"), now),
+                root.get("maintenanceStatus").in(MaintenanceStatusEnum.ABERTA, MaintenanceStatusEnum.EM_ANDAMENTO));
+    }
+
+    private Map<Long, BigDecimal> partsCostFor(List<MaintenanceRegister> registers) {
+        Map<Long, BigDecimal> totals = new HashMap<>();
+        if (registers.isEmpty()) {
+            return totals;
+        }
+        List<Long> ids = registers.stream().map(MaintenanceRegister::getId).toList();
+        for (MaintenancePart part : maintenancePartRepository.findByMaintenanceIds(ids)) {
+            BigDecimal line = lineCost(part);
+            totals.merge(part.getId().getMaintenanceId(), line, BigDecimal::add);
+        }
+        return totals;
+    }
+
+    private BigDecimal lineCost(MaintenancePart part) {
+        BigDecimal unit = part.getUnitCost() != null ? part.getUnitCost() : BigDecimal.ZERO;
+        return unit.multiply(BigDecimal.valueOf(part.getQuantity()));
+    }
+
+    private MaintenanceRegisterDTO toDTO(MaintenanceRegister m) {
+        BigDecimal partsCost = maintenancePartRepository.findByMaintenanceIds(List.of(m.getId())).stream()
+                .map(this::lineCost).reduce(BigDecimal.ZERO, BigDecimal::add);
+        return toDTO(m, partsCost);
+    }
+
+    private MaintenanceRegisterDTO toDTO(MaintenanceRegister m, BigDecimal partsCost) {
+        Warning warning = m.getWarning();
+        Panel panel = warning.getPanel();
+        PanelString string = warning.getPanelString() != null ? warning.getPanelString()
+                : (panel != null ? panel.getPanelString() : null);
+        Inverter inverter = string != null ? string.getInverter() : null;
+        boolean overdue = m.getDueDate() != null && m.getDueDate().isBefore(DbProcedures.now())
+                && (m.getMaintenanceStatus() == MaintenanceStatusEnum.ABERTA
+                || m.getMaintenanceStatus() == MaintenanceStatusEnum.EM_ANDAMENTO);
+        BigDecimal labor = m.getLaborCost() != null ? m.getLaborCost() : BigDecimal.ZERO;
+        return new MaintenanceRegisterDTO(m.getId(),
+                m.getParentMaintenance() != null ? m.getParentMaintenance().getId() : null,
+                warning.getId(), warning.getType(), warning.getSeverity(),
+                inverter != null ? inverter.getCompanyUnit().getId() : null,
+                m.getMaintenanceType().getId(), m.getMaintenanceType().getName(),
+                m.getTechnician().getId(), m.getTechnician().getFullName(), m.getCreatedBy().getId(),
+                m.getTechnicalReport(), m.getMaintenanceStatus(), overdue, m.getOpeningDt(), m.getDueDate(),
+                m.getConcludedAt(), m.getCancelledAt(), m.getCancellationReason(), m.getEstimatedCost(),
+                m.getLaborCost(), partsCost, labor.add(partsCost));
+    }
+
+    private MaintenancePartDTO toPartDTO(MaintenancePart p) {
+        return new MaintenancePartDTO(p.getPart().getId(), p.getPart().getSku(), p.getPart().getName(),
+                p.getQuantity(), p.getUnitCost(), lineCost(p), p.getConsumedAt());
     }
 
     private Long companyId() {
         return tenantContext.getCompanyId();
-    }
-
-    private MaintenanceRegisterDTO toDTO(MaintenanceRegister r) {
-        return new MaintenanceRegisterDTO(r.getId(), r.getParentMaintenance() == null ? null : r.getParentMaintenance().getId(),
-                r.getMaintenanceType().getId(), r.getBatch().getId(), r.getTechnician().getId(), r.getCreatedBy().getId(),
-                r.getTechnicalReport(), r.getMaintenanceStatus(), r.getPriority(), r.getOpeningDt(), r.getDueDate(),
-                r.getConcludedAt(), r.getEstimatedCost(), r.getActualCost());
     }
 }
