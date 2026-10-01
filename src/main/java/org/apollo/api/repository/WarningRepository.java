@@ -1,12 +1,16 @@
 package org.apollo.api.repository;
 
 import org.apollo.api.model.Warning;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
-import java.util.List;
-import java.util.Optional;
+public interface WarningRepository extends JpaRepository<Warning, Long>, JpaSpecificationExecutor<Warning> {
 
-public interface WarningRepository extends JpaRepository<Warning, Long> {
-    List<Warning> findAllByPanelBatchCompanyUnitCompanyId(Long companyId);
-    Optional<Warning> findByIdAndPanelBatchCompanyUnitCompanyId(Long id, Long companyId);
+    @Override
+    @EntityGraph(attributePaths = {"panelString", "panelString.inverter", "panel", "panel.panelString", "panel.panelString.inverter"})
+    Page<Warning> findAll(Specification<Warning> spec, Pageable pageable);
 }
