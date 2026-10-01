@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "address")
@@ -31,9 +33,15 @@ public class Address {
     @Column(name = "city", nullable = false, length = 100)
     private String city;
 
+    // BUG FIX (schema/model mismatch): the database column is CHAR(2) (fixed-length),
+    // not VARCHAR(2). With ddl-auto=validate this mismatch would fail schema validation
+    // at boot with a "wrong column type" error.
+    @JdbcTypeCode(SqlTypes.CHAR)
     @Column(name = "state", nullable = false, length = 2)
     private String state;
 
+    // zip_code tambem e CHAR(8) no banco (bpchar), nao VARCHAR.
+    @JdbcTypeCode(SqlTypes.CHAR)
     @Column(name = "zip_code", nullable = false, length = 8)
     private String zipCode;
 }

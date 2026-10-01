@@ -1,9 +1,12 @@
 package org.apollo.api.model;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+import org.hibernate.annotations.Formula;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -11,9 +14,9 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "company_unit")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
-@AllArgsConstructor
 public class CompanyUnit {
 
     @Id
@@ -35,21 +38,15 @@ public class CompanyUnit {
     @Column(name = "name", nullable = false, length = 150)
     private String name;
 
-    @Column(name = "created_at", nullable = false)
-    private LocalDate createdAt = LocalDate.now();
+    @JdbcTypeCode(SqlTypes.CHAR)
+    @Column(name = "cnpj", nullable = false, length = 14)
+    private String cnpj;
 
-    @Column(name = "email", nullable = false, length = 100)
+    @Column(name = "email", nullable = false, length = 120)
     private String email;
 
     @Column(name = "phone", nullable = false, length = 20)
     private String phone;
-
-    @Column(name = "cnpj", length = 18)
-    private String cnpj;
-
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "responsible_employee_id")
-    private Employee responsibleEmployee;
 
     @Column(name = "contact_email", length = 120)
     private String contactEmail;
@@ -57,9 +54,17 @@ public class CompanyUnit {
     @Column(name = "contact_phone", length = 20)
     private String contactPhone;
 
-    @Column(name = "kwp_total", precision = 10, scale = 2)
-    private BigDecimal kwpTotal;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "responsible_employee_id")
+    private Employee responsibleEmployee;
 
     @Column(name = "is_active", nullable = false)
     private boolean active = true;
+
+    @Column(name = "created_at", nullable = false)
+    private LocalDate createdAt = LocalDate.now();
+
+    // A potencia instalada (kWp) nao e coluna: vem da view vw_company_unit_capacity.
+    @Formula("(select c.kwp_total from vw_company_unit_capacity c where c.company_unit_id = id)")
+    private BigDecimal kwpTotal;
 }
