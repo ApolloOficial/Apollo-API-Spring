@@ -1,25 +1,14 @@
 package org.apollo.api.dto;
 
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 import org.apollo.api.enums.PriorityEnum;
 import org.apollo.api.enums.WarningStatusEnum;
+import org.apollo.api.enums.WarningTypeEnum;
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-public class WarningDTO {
-    private Long id;
+import java.time.LocalDateTime;
+import java.util.UUID;
 
-    @NotNull(message = "Painel é obrigatório")
-    private Long panelId;
-
-    @NotBlank private String type;
-    private PriorityEnum severity;
-    private WarningStatusEnum status;
-
-    @NotBlank private String message;
+public record WarningDTO(Long id, UUID stringId, String stringCode, String inverterCode, Long panelId,
+                         String panelSerial, UUID companyUnitId, WarningTypeEnum type, PriorityEnum severity,
+                         WarningStatusEnum status, String message, UUID reportedBy, LocalDateTime generationDt,
+                         LocalDateTime resolvedAt, Long maintenanceId) {
 }
