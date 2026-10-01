@@ -16,26 +16,26 @@ public class AddressDTO {
     private Long id;
     private UUID companyUnitId;
 
-    @NotBlank(message = "Logradouro é obrigatório")
+    @NotBlank(message = "Street name is required")
     private String streetName;
 
-    @NotBlank(message = "Número é obrigatório")
+    @NotBlank(message = "Number is required")
     private String number;
 
     private String additionalInfo;
 
-    @NotBlank(message = "Bairro é obrigatório")
+    @NotBlank(message = "Neighborhood is required")
     private String neighborhood;
 
-    @NotBlank(message = "Cidade é obrigatória")
+    @NotBlank(message = "City is required")
     private String city;
 
-    @NotBlank(message = "Estado é obrigatório")
-    @Pattern(regexp = "^[A-Z]{2}$", message = "Estado deve conter exatamente 2 letras maiúsculas")
+    @NotBlank(message = "State is required")
+    @Pattern(regexp = "^[A-Z]{2}$", message = "State must contain exactly 2 uppercase letters")
     private String state;
 
-    @NotBlank(message = "CEP é obrigatório")
-    @Pattern(regexp = "^[0-9]{8}$", message = "CEP deve conter exatamente 8 dígitos")
+    @NotBlank(message = "ZIP code is required")
+    @Pattern(regexp = "^[0-9]{8}$", message = "ZIP code must contain exactly 8 digits")
     private String zipCode;
 
     public AddressDTO(Long id, String streetName, String number, String additionalInfo,
