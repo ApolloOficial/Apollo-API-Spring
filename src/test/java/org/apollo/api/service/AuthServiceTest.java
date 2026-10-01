@@ -39,6 +39,9 @@ class AuthServiceTest {
     @Mock
     private JwtService jwtService;
 
+    @Mock
+    private org.apollo.api.util.DbProcedures dbProcedures;
+
     @InjectMocks
     private AuthService authService;
 
@@ -66,7 +69,7 @@ class AuthServiceTest {
         ResponseStatusException exception = assertThrows(ResponseStatusException.class, () -> authService.login(request));
 
         assertEquals(HttpStatus.UNAUTHORIZED, exception.getStatusCode());
-        assertEquals("Credenciais inválidas", exception.getReason());
+        assertEquals("Invalid credentials", exception.getReason());
     }
 
     private AuthUser authenticatedUser() {
@@ -76,7 +79,7 @@ class AuthServiceTest {
         when(user.getEmail()).thenReturn("admin@apollo.com");
         when(user.getPasswordHash()).thenReturn("encoded-password");
         when(user.isActive()).thenReturn(true);
-        when(user.getRole()).thenReturn(new Roles(1L, "ADMINISTRATOR", null));
+        when(user.getRole()).thenReturn(new Roles(1L, "MANAGER", null));
         return user;
     }
 }

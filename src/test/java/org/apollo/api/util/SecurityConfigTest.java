@@ -16,8 +16,7 @@ import org.springframework.test.context.junit.jupiter.web.SpringJUnitWebConfig;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
@@ -28,6 +27,8 @@ import java.util.UUID;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -58,34 +59,85 @@ class SecurityConfigTest {
     }
 
     @Test
-    void shouldAllowOperatorToWrite() throws Exception {
+    void shouldAllowOperatorToRegisterInverter() throws Exception {
         authenticate("operator-token", "OPERATOR");
-        mockMvc.perform(post("/api/test").header(HttpHeaders.AUTHORIZATION, "Bearer operator-token"))
-                .andExpect(status().isOk());
-    }
-
-    @Test
-    void shouldAllowAnalystToRead() throws Exception {
-        authenticate("analyst-token", "ANALYST");
-        mockMvc.perform(get("/api/test").header(HttpHeaders.AUTHORIZATION, "Bearer analyst-token"))
+        mockMvc.perform(post("/api/v1/inverters").header(HttpHeaders.AUTHORIZATION, "Bearer operator-token"))
                 .andExpect(status().isOk());
     }
 
     @Test
     void shouldRejectAnalystWrite() throws Exception {
         authenticate("analyst-token", "ANALYST");
-        mockMvc.perform(post("/api/test").header(HttpHeaders.AUTHORIZATION, "Bearer analyst-token"))
+        mockMvc.perform(post("/api/v1/inverters").header(HttpHeaders.AUTHORIZATION, "Bearer analyst-token"))
                 .andExpect(status().isForbidden());
     }
 
     @Test
-    void shouldRequireAuthenticationForCrudEndpoints() throws Exception {
-        mockMvc.perform(get("/api/test"))
+    void shouldAllowAnalystToRead() throws Exception {
+        authenticate("analyst-token", "ANALYST");
+        mockMvc.perform(get("/api/v1/warnings").header(HttpHeaders.AUTHORIZATION, "Bearer analyst-token"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void shouldAllowTechnicianToStartMaintenance() throws Exception {
+        authenticate("technician-token", "TECHNICIAN");
+        mockMvc.perform(patch("/api/v1/maintenance-registers/1/start").header(HttpHeaders.AUTHORIZATION, "Bearer technician-token"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void shouldRejectOperatorStartingMaintenance() throws Exception {
+        authenticate("operator-token", "OPERATOR");
+        mockMvc.perform(patch("/api/v1/maintenance-registers/1/start").header(HttpHeaders.AUTHORIZATION, "Bearer operator-token"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void shouldRejectTechnicianOnEmployees() throws Exception {
+        authenticate("technician-token", "TECHNICIAN");
+        mockMvc.perform(get("/api/v1/employees").header(HttpHeaders.AUTHORIZATION, "Bearer technician-token"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void shouldRequireAuthenticationForApiEndpoints() throws Exception {
+        mockMvc.perform(get("/api/v1/warnings"))
                 .andExpect(status().isUnauthorized())
                 .andExpect(content().contentType("application/json"))
                 .andExpect(content().json("""
-                        {"status": 401, "message": "Token ausente ou inválido"}
+                        {"status": 401, "message": "Missing or invalid token"}
                         """));
+    }
+
+    @Test
+    void shouldAllowManagerToWriteEmployees() throws Exception {
+        authenticate("manager-token", "MANAGER");
+        mockMvc.perform(post("/api/v1/employees").header(HttpHeaders.AUTHORIZATION, "Bearer manager-token"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void shouldRejectOperatorWritingEmployees() throws Exception {
+        authenticate("operator-token", "OPERATOR");
+        mockMvc.perform(post("/api/v1/employees").header(HttpHeaders.AUTHORIZATION, "Bearer operator-token"))
+                .andExpect(status().isForbidden());
+    }
+
+    // Regression test for the "DELETE fails with a CORS error" bug: a CORS preflight
+    // (OPTIONS) request never carries an Authorization header, so it must not be
+    // rejected by the security filter chain with 401/403.
+    @Test
+    void shouldNotRejectCorsPreflightWithoutToken() throws Exception {
+        mockMvc.perform(options("/api/v1/stocks/x/1")
+                        .header(HttpHeaders.ORIGIN, "http://localhost:3000")
+                        .header(HttpHeaders.ACCESS_CONTROL_REQUEST_METHOD, "DELETE"))
+                .andExpect(result -> {
+                    int status = result.getResponse().getStatus();
+                    if (status == 401 || status == 403) {
+                        throw new AssertionError("Preflight was rejected by security with status " + status);
+                    }
+                });
     }
 
     private void authenticate(String token, String roleName) {
@@ -115,7 +167,6 @@ class SecurityConfigTest {
 
     @RestController
     static class TestController {
-        @GetMapping("/api/test") String read() { return "ok"; }
-        @PostMapping("/api/test") String write() { return "ok"; }
+        @RequestMapping("/api/v1/**") String any() { return "ok"; }
     }
 }
