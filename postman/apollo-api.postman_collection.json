@@ -1,0 +1,2463 @@
+{
+  "info": {
+    "name": "Apollo API — testes por endpoint (esquema 2º ano)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Rode a pasta 0 e depois as demais em ordem (Runner). Cada pasta faz o próprio login. Os IDs são descobertos nas listagens. Senha de todos: Apollo@2026."
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "today",
+      "value": ""
+    },
+    {
+      "key": "inTenDays",
+      "value": ""
+    },
+    {
+      "key": "unitId",
+      "value": ""
+    },
+    {
+      "key": "technicianId",
+      "value": ""
+    },
+    {
+      "key": "maintenanceTypeId",
+      "value": ""
+    },
+    {
+      "key": "partId",
+      "value": ""
+    },
+    {
+      "key": "inverterModelId",
+      "value": ""
+    },
+    {
+      "key": "stringId",
+      "value": ""
+    },
+    {
+      "key": "panelId",
+      "value": ""
+    },
+    {
+      "key": "barcode",
+      "value": ""
+    },
+    {
+      "key": "warningId",
+      "value": ""
+    },
+    {
+      "key": "maintenanceId",
+      "value": ""
+    },
+    {
+      "key": "technicianSelfId",
+      "value": ""
+    },
+    {
+      "key": "myUnitId",
+      "value": ""
+    },
+    {
+      "key": "myCompanyId",
+      "value": ""
+    },
+    {
+      "key": "destUnitId",
+      "value": ""
+    },
+    {
+      "key": "relocationId",
+      "value": ""
+    },
+    {
+      "key": "externalRelocationId",
+      "value": ""
+    },
+    {
+      "key": "segmentId",
+      "value": ""
+    },
+    {
+      "key": "inverterId",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "0 · Login e perfil (Gerente)",
+      "item": [
+        {
+          "name": "Login (Renata – Gerente)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{emailManager}}\",\n  \"password\": \"{{password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const j = pm.response.json();",
+                  "pm.test('token Bearer', () => { pm.expect(j.token).to.be.a('string'); pm.expect(j.tokenType).to.eql('Bearer'); });",
+                  "pm.collectionVariables.set('token', j.token);",
+                  "pm.collectionVariables.set('today', new Date().toISOString().slice(0,10));",
+                  "pm.collectionVariables.set('inTenDays', new Date(Date.now()+10*86400000).toISOString().slice(0,19));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login com senha errada → 401",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{emailManager}}\",\n  \"password\": \"senha-errada-123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 401', () => pm.expect(pm.response.code).to.be.oneOf([401]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Sem token → 401",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/auth/me",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 401', () => pm.expect(pm.response.code).to.be.oneOf([401]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Perfil (/auth/me)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/auth/me"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const j=pm.response.json();",
+                  "pm.test('tem role', () => pm.expect(j.role).to.be.a('string'));",
+                  "pm.collectionVariables.set('managerId', j.userId);",
+                  "pm.collectionVariables.set('myUnitId', j.companyUnitId);",
+                  "pm.collectionVariables.set('myCompanyId', j.companyId);"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "1 · Gerente – cadastros e referência",
+      "item": [
+        {
+          "name": "Login (Renata – Gerente)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{emailManager}}\",\n  \"password\": \"{{password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const j = pm.response.json();",
+                  "pm.test('token Bearer', () => { pm.expect(j.token).to.be.a('string'); pm.expect(j.tokenType).to.eql('Bearer'); });",
+                  "pm.collectionVariables.set('token', j.token);",
+                  "pm.collectionVariables.set('today', new Date().toISOString().slice(0,10));",
+                  "pm.collectionVariables.set('inTenDays', new Date(Date.now()+10*86400000).toISOString().slice(0,19));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cargos (roles)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/roles"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const p=pm.response.json();",
+                  "pm.test('resposta paginada', () => { pm.expect(p).to.have.property('content'); pm.expect(p).to.have.property('totalElements'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Segmentos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/segments"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const p=pm.response.json();",
+                  "pm.test('resposta paginada', () => { pm.expect(p).to.have.property('content'); pm.expect(p).to.have.property('totalElements'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Segmentos – sort inválido → 400",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/segments?sortBy=xxx"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400', () => pm.expect(pm.response.code).to.be.oneOf([400]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Minha empresa",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/companies"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const p=pm.response.json();",
+                  "pm.test('resposta paginada', () => { pm.expect(p).to.have.property('content'); pm.expect(p).to.have.property('totalElements'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Empresa por id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/companies/{{myCompanyId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Empresa de outro tenant → 404",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/companies/999999"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 404', () => pm.expect(pm.response.code).to.be.oneOf([404]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Filiais",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/company-units"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const p=pm.response.json();",
+                  "pm.test('resposta paginada', () => { pm.expect(p).to.have.property('content'); pm.expect(p).to.have.property('totalElements'); });",
+                  "const p=pm.response.json();",
+                  "const v=(p.content[0].id);",
+                  "if(v!==undefined && v!==null) pm.collectionVariables.set('unitId', v);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Filial por id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/company-units/{{unitId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Funcionários",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/employees"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const p=pm.response.json();",
+                  "pm.test('resposta paginada', () => { pm.expect(p).to.have.property('content'); pm.expect(p).to.have.property('totalElements'); });",
+                  "const p=pm.response.json();",
+                  "const v=((p.content.find(e=>/TECNICO|TECHNICIAN/i.test(e.role))||{}).id);",
+                  "if(v!==undefined && v!==null) pm.collectionVariables.set('technicianId', v);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Funcionários – filtro por cargo",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/employees?role=TECNICO"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const p=pm.response.json();",
+                  "pm.test('resposta paginada', () => { pm.expect(p).to.have.property('content'); pm.expect(p).to.have.property('totalElements'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Gerente não abre OS → 403",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/maintenance-registers",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"warningId\": 1,\n  \"technicianId\": \"{{technicianId}}\",\n  \"maintenanceTypeId\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 403', () => pm.expect(pm.response.code).to.be.oneOf([403]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Tipos de manutenção",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/maintenance-types"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const a=pm.response.json();",
+                  "pm.test('lista', () => pm.expect(a).to.be.an('array').that.is.not.empty);",
+                  "pm.collectionVariables.set('maintenanceTypeId', a[0].id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Peças (catálogo)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/parts"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const p=pm.response.json();",
+                  "pm.test('resposta paginada', () => { pm.expect(p).to.have.property('content'); pm.expect(p).to.have.property('totalElements'); });",
+                  "const p=pm.response.json();",
+                  "const v=(p.content[0].id);",
+                  "if(v!==undefined && v!==null) pm.collectionVariables.set('partId', v);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Modelos de placa",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/panel-models"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const p=pm.response.json();",
+                  "pm.test('resposta paginada', () => { pm.expect(p).to.have.property('content'); pm.expect(p).to.have.property('totalElements'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Modelos de inversor",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/inverter-models"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const p=pm.response.json();",
+                  "pm.test('resposta paginada', () => { pm.expect(p).to.have.property('content'); pm.expect(p).to.have.property('totalElements'); });",
+                  "const p=pm.response.json();",
+                  "const v=(p.content[0].id);",
+                  "if(v!==undefined && v!==null) pm.collectionVariables.set('inverterModelId', v);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Estoque",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/stocks"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const p=pm.response.json();",
+                  "pm.test('resposta paginada', () => { pm.expect(p).to.have.property('content'); pm.expect(p).to.have.property('totalElements'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Estoque abaixo do mínimo",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/stocks?belowMinimum=true"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const p=pm.response.json();",
+                  "pm.test('resposta paginada', () => { pm.expect(p).to.have.property('content'); pm.expect(p).to.have.property('totalElements'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Inversores",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/inverters"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const p=pm.response.json();",
+                  "pm.test('resposta paginada', () => { pm.expect(p).to.have.property('content'); pm.expect(p).to.have.property('totalElements'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Strings",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/strings"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const p=pm.response.json();",
+                  "pm.test('resposta paginada', () => { pm.expect(p).to.have.property('content'); pm.expect(p).to.have.property('totalElements'); });",
+                  "const p=pm.response.json();",
+                  "const v=(p.content[0].id);",
+                  "if(v!==undefined && v!==null) pm.collectionVariables.set('stringId', v);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Placas",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/panels"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const p=pm.response.json();",
+                  "pm.test('resposta paginada', () => { pm.expect(p).to.have.property('content'); pm.expect(p).to.have.property('totalElements'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Alertas",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/warnings"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const p=pm.response.json();",
+                  "pm.test('resposta paginada', () => { pm.expect(p).to.have.property('content'); pm.expect(p).to.have.property('totalElements'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Ordens de serviço",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/maintenance-registers"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const p=pm.response.json();",
+                  "pm.test('resposta paginada', () => { pm.expect(p).to.have.property('content'); pm.expect(p).to.have.property('totalElements'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Realocações internas",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/relocations/internal"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const p=pm.response.json();",
+                  "pm.test('resposta paginada', () => { pm.expect(p).to.have.property('content'); pm.expect(p).to.have.property('totalElements'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Realocações externas",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/relocations/external"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const p=pm.response.json();",
+                  "pm.test('resposta paginada', () => { pm.expect(p).to.have.property('content'); pm.expect(p).to.have.property('totalElements'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Busca global",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/search?q=INV"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Gerente não cadastra inversor → 403",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/inverters",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 403', () => pm.expect(pm.response.code).to.be.oneOf([403]));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "2 · Operador – consultas e abertura de OS",
+      "item": [
+        {
+          "name": "Login (Gabriel – Operador)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{emailOperator}}\",\n  \"password\": \"{{password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const j = pm.response.json();",
+                  "pm.test('token Bearer', () => { pm.expect(j.token).to.be.a('string'); pm.expect(j.tokenType).to.eql('Bearer'); });",
+                  "pm.collectionVariables.set('token', j.token);",
+                  "pm.collectionVariables.set('today', new Date().toISOString().slice(0,10));",
+                  "pm.collectionVariables.set('inTenDays', new Date(Date.now()+10*86400000).toISOString().slice(0,19));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Perfil (/auth/me)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/auth/me"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const j=pm.response.json();",
+                  "pm.test('tem role', () => pm.expect(j.role).to.be.a('string'));",
+                  "pm.collectionVariables.set('operatorId', j.userId);",
+                  "pm.collectionVariables.set('myUnitId', j.companyUnitId);",
+                  "pm.collectionVariables.set('myCompanyId', j.companyId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Inversores",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/inverters"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const p=pm.response.json();",
+                  "pm.test('resposta paginada', () => { pm.expect(p).to.have.property('content'); pm.expect(p).to.have.property('totalElements'); });",
+                  "const p=pm.response.json();",
+                  "const v=(p.content[0].id);",
+                  "if(v!==undefined && v!==null) pm.collectionVariables.set('inverterId', v);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Inversor por id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/inverters/{{inverterId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Inversores – filtro status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/inverters?status=ATIVO&sortBy=code&direction=ASC"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const p=pm.response.json();",
+                  "pm.test('resposta paginada', () => { pm.expect(p).to.have.property('content'); pm.expect(p).to.have.property('totalElements'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Strings",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/strings"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const p=pm.response.json();",
+                  "pm.test('resposta paginada', () => { pm.expect(p).to.have.property('content'); pm.expect(p).to.have.property('totalElements'); });",
+                  "const p=pm.response.json();",
+                  "const v=(p.content[0].id);",
+                  "if(v!==undefined && v!==null) pm.collectionVariables.set('stringId', v);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Strings – saúde ≤ 80 e com alertas",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/strings?maxHealth=80&withWarnings=true"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const p=pm.response.json();",
+                  "pm.test('resposta paginada', () => { pm.expect(p).to.have.property('content'); pm.expect(p).to.have.property('totalElements'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "String por id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/strings/{{stringId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Medições da string",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/strings/{{stringId}}/measurements?size=10"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const p=pm.response.json();",
+                  "pm.test('resposta paginada', () => { pm.expect(p).to.have.property('content'); pm.expect(p).to.have.property('totalElements'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Histórico de saúde da string",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/strings/{{stringId}}/health-history"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const p=pm.response.json();",
+                  "pm.test('resposta paginada', () => { pm.expect(p).to.have.property('content'); pm.expect(p).to.have.property('totalElements'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Candidatas à realocação",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/strings/relocation-candidates"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "pm.test('lista', () => pm.expect(pm.response.json()).to.be.an('array'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Placas",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/panels"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const p=pm.response.json();",
+                  "pm.test('resposta paginada', () => { pm.expect(p).to.have.property('content'); pm.expect(p).to.have.property('totalElements'); });",
+                  "const p=pm.response.json();",
+                  "const v=(p.content[0].id);",
+                  "if(v!==undefined && v!==null) pm.collectionVariables.set('panelId', v);",
+                  "const b=p.content[0]; if(b) pm.collectionVariables.set('barcode', b.barcode);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Placa por id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/panels/{{panelId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Placa por barcode",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/panels/barcode/{{barcode}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Alertas ATIVOS",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/warnings?status=ATIVO"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const p=pm.response.json();",
+                  "pm.test('resposta paginada', () => { pm.expect(p).to.have.property('content'); pm.expect(p).to.have.property('totalElements'); });",
+                  "const p=pm.response.json();",
+                  "const v=((p.content.find(w=>!w.maintenanceId)||p.content[0]||{}).id);",
+                  "if(v!==undefined && v!==null) pm.collectionVariables.set('warningId', v);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Alertas críticos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/warnings?severity=CRITICA"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const p=pm.response.json();",
+                  "pm.test('resposta paginada', () => { pm.expect(p).to.have.property('content'); pm.expect(p).to.have.property('totalElements'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Alerta por id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/warnings/{{warningId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Estoque",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/stocks"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const p=pm.response.json();",
+                  "pm.test('resposta paginada', () => { pm.expect(p).to.have.property('content'); pm.expect(p).to.have.property('totalElements'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Ordens de serviço",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/maintenance-registers"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const p=pm.response.json();",
+                  "pm.test('resposta paginada', () => { pm.expect(p).to.have.property('content'); pm.expect(p).to.have.property('totalElements'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Abrir OS a partir do alerta",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/maintenance-registers",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"warningId\": \"{{warningId}}\",\n  \"technicianId\": \"{{technicianId}}\",\n  \"maintenanceTypeId\": \"{{maintenanceTypeId}}\",\n  \"dueDate\": \"{{inTenDays}}\",\n  \"estimatedCost\": 150.0\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201/400', () => pm.expect(pm.response.code).to.be.oneOf([201, 400]));",
+                  "if(pm.response.code===201){ pm.collectionVariables.set('maintenanceId', pm.response.json().id); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "OS por id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/maintenance-registers/{{maintenanceId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200/404', () => pm.expect(pm.response.code).to.be.oneOf([200, 404]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Busca global",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/search?q=STR"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Sugestões de busca",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/search/suggestions?q=INV"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Operador não edita funcionário → 403",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/employees",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 403', () => pm.expect(pm.response.code).to.be.oneOf([403]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Operador não inicia OS → 403",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/maintenance-registers/{{maintenanceId}}/start"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 403', () => pm.expect(pm.response.code).to.be.oneOf([403]));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "3 · Técnico – campo e execução da OS",
+      "item": [
+        {
+          "name": "Login (Vanessa – Técnica)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{emailTechnician}}\",\n  \"password\": \"{{password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const j = pm.response.json();",
+                  "pm.test('token Bearer', () => { pm.expect(j.token).to.be.a('string'); pm.expect(j.tokenType).to.eql('Bearer'); });",
+                  "pm.collectionVariables.set('token', j.token);",
+                  "pm.collectionVariables.set('today', new Date().toISOString().slice(0,10));",
+                  "pm.collectionVariables.set('inTenDays', new Date(Date.now()+10*86400000).toISOString().slice(0,19));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Perfil (/auth/me)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/auth/me"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const j=pm.response.json();",
+                  "pm.test('tem role', () => pm.expect(j.role).to.be.a('string'));",
+                  "pm.collectionVariables.set('technicianSelfId', j.userId);",
+                  "pm.collectionVariables.set('myUnitId', j.companyUnitId);",
+                  "pm.collectionVariables.set('myCompanyId', j.companyId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Placas",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/panels"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const p=pm.response.json();",
+                  "pm.test('resposta paginada', () => { pm.expect(p).to.have.property('content'); pm.expect(p).to.have.property('totalElements'); });",
+                  "const p=pm.response.json();",
+                  "const v=(p.content[0].id);",
+                  "if(v!==undefined && v!==null) pm.collectionVariables.set('panelId', v);",
+                  "const b=p.content.find(x=>x.operatingStats==='OPERACIONAL')||p.content[0]; if(b) pm.collectionVariables.set('barcode', b.barcode);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Relatar problema em placa → cria alerta",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/panels/report-issue",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"barcode\": \"{{barcode}}\",\n  \"type\": \"SUJIDADE\",\n  \"severity\": \"BAIXA\",\n  \"message\": \"Poeira acumulada (teste Postman)\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201/400', () => pm.expect(pm.response.code).to.be.oneOf([201, 400]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Relato com tipo inválido para placa → 400",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/panels/report-issue",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"barcode\": \"{{barcode}}\",\n  \"type\": \"FALHA_INVERSOR\",\n  \"severity\": \"ALTA\",\n  \"message\": \"tipo não aceito para placa\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400', () => pm.expect(pm.response.code).to.be.oneOf([400]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Minhas OS",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/maintenance-registers?technicianId={{technicianSelfId}}&status=ABERTA"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const p=pm.response.json();",
+                  "pm.test('resposta paginada', () => { pm.expect(p).to.have.property('content'); pm.expect(p).to.have.property('totalElements'); });",
+                  "const p=pm.response.json();",
+                  "const v=((p.content[0]||{}).id);",
+                  "if(v!==undefined && v!==null) pm.collectionVariables.set('maintenanceId', v);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Iniciar OS",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/maintenance-registers/{{maintenanceId}}/start"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200/400/404', () => pm.expect(pm.response.code).to.be.oneOf([200, 400, 404]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Lançar peça usada",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/maintenance-registers/{{maintenanceId}}/parts",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"partId\": \"{{partId}}\",\n  \"quantity\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201/400/404', () => pm.expect(pm.response.code).to.be.oneOf([201, 400, 404]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Peças da OS",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/maintenance-registers/{{maintenanceId}}/parts"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200/404', () => pm.expect(pm.response.code).to.be.oneOf([200, 404]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Concluir OS",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/maintenance-registers/{{maintenanceId}}/complete",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"technicalReport\": \"Serviço executado e testado (Postman)\",\n  \"laborCost\": 80.0\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200/400/404', () => pm.expect(pm.response.code).to.be.oneOf([200, 400, 404]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Concluir de novo → 400 (regra do banco)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/maintenance-registers/{{maintenanceId}}/complete",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"technicalReport\": \"duplicado\",\n  \"laborCost\": 0\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400/404', () => pm.expect(pm.response.code).to.be.oneOf([400, 404]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Técnico não vê funcionários → 403",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/employees"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 403', () => pm.expect(pm.response.code).to.be.oneOf([403]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Técnico não cadastra inversor → 403",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/inverters",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 403', () => pm.expect(pm.response.code).to.be.oneOf([403]));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "4 · Analista – somente leitura",
+      "item": [
+        {
+          "name": "Login (Juliana – Analista)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{emailAnalyst}}\",\n  \"password\": \"{{password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const j = pm.response.json();",
+                  "pm.test('token Bearer', () => { pm.expect(j.token).to.be.a('string'); pm.expect(j.tokenType).to.eql('Bearer'); });",
+                  "pm.collectionVariables.set('token', j.token);",
+                  "pm.collectionVariables.set('today', new Date().toISOString().slice(0,10));",
+                  "pm.collectionVariables.set('inTenDays', new Date(Date.now()+10*86400000).toISOString().slice(0,19));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Perfil (/auth/me)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/auth/me"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const j=pm.response.json();",
+                  "pm.test('tem role', () => pm.expect(j.role).to.be.a('string'));",
+                  "pm.collectionVariables.set('myUnitId', j.companyUnitId);",
+                  "pm.collectionVariables.set('myCompanyId', j.companyId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Strings",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/strings"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const p=pm.response.json();",
+                  "pm.test('resposta paginada', () => { pm.expect(p).to.have.property('content'); pm.expect(p).to.have.property('totalElements'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Alertas",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/warnings"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const p=pm.response.json();",
+                  "pm.test('resposta paginada', () => { pm.expect(p).to.have.property('content'); pm.expect(p).to.have.property('totalElements'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Realocações internas",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/relocations/internal"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const p=pm.response.json();",
+                  "pm.test('resposta paginada', () => { pm.expect(p).to.have.property('content'); pm.expect(p).to.have.property('totalElements'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Funcionários",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/employees"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const p=pm.response.json();",
+                  "pm.test('resposta paginada', () => { pm.expect(p).to.have.property('content'); pm.expect(p).to.have.property('totalElements'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Recalcular saúde das strings",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/strings/recalculate-health?windowDays=7"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 204', () => pm.expect(pm.response.code).to.be.oneOf([204]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Analista não cadastra inversor → 403",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/inverters",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 403', () => pm.expect(pm.response.code).to.be.oneOf([403]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Analista não abre OS → 403",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/maintenance-registers",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 403', () => pm.expect(pm.response.code).to.be.oneOf([403]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Analista não mexe no estoque → 403",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/stocks",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 403', () => pm.expect(pm.response.code).to.be.oneOf([403]));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "5 · Realocações (Operador sugere, Gerente decide)",
+      "item": [
+        {
+          "name": "Login (Gabriel – Operador)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{emailOperator}}\",\n  \"password\": \"{{password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const j = pm.response.json();",
+                  "pm.test('token Bearer', () => { pm.expect(j.token).to.be.a('string'); pm.expect(j.tokenType).to.eql('Bearer'); });",
+                  "pm.collectionVariables.set('token', j.token);",
+                  "pm.collectionVariables.set('today', new Date().toISOString().slice(0,10));",
+                  "pm.collectionVariables.set('inTenDays', new Date(Date.now()+10*86400000).toISOString().slice(0,19));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Filiais (para escolher destino)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/company-units"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const p=pm.response.json();",
+                  "pm.test('resposta paginada', () => { pm.expect(p).to.have.property('content'); pm.expect(p).to.have.property('totalElements'); });",
+                  "const p=pm.response.json();",
+                  "const v=(p.content[0].id);",
+                  "if(v!==undefined && v!==null) pm.collectionVariables.set('unitId', v);",
+                  "const other=p.content.find(u=>u.id!==pm.collectionVariables.get('myUnitId')); if(other) pm.collectionVariables.set('destUnitId', other.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Strings",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/strings"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const p=pm.response.json();",
+                  "pm.test('resposta paginada', () => { pm.expect(p).to.have.property('content'); pm.expect(p).to.have.property('totalElements'); });",
+                  "const p=pm.response.json();",
+                  "const v=(p.content[0].id);",
+                  "if(v!==undefined && v!==null) pm.collectionVariables.set('stringId', v);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Sugerir realocação interna",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/relocations/internal",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"stringId\": \"{{stringId}}\",\n  \"quantity\": 1,\n  \"suggestedUnitId\": \"{{destUnitId}}\",\n  \"justification\": \"Teste Postman – baixa saúde\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201/400', () => pm.expect(pm.response.code).to.be.oneOf([201, 400]));",
+                  "if(pm.response.code===201) pm.collectionVariables.set('relocationId', pm.response.json().id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Segmentos (destino externo = Agronegócio)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/segments"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const p=pm.response.json();",
+                  "pm.test('resposta paginada', () => { pm.expect(p).to.have.property('content'); pm.expect(p).to.have.property('totalElements'); });",
+                  "const p=pm.response.json();",
+                  "const v=(p.content[0].id);",
+                  "const s=pm.response.json().content.find(x=>/agro/i.test(x.name))||pm.response.json().content[0]; if(s) pm.collectionVariables.set('segmentId', s.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Placas",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/panels"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const p=pm.response.json();",
+                  "pm.test('resposta paginada', () => { pm.expect(p).to.have.property('content'); pm.expect(p).to.have.property('totalElements'); });",
+                  "const p=pm.response.json();",
+                  "const v=(p.content[0].id);",
+                  "if(v!==undefined && v!==null) pm.collectionVariables.set('panelId', v);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Sugerir realocação externa",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/relocations/external",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"panelId\": \"{{panelId}}\",\n  \"destinationCompanyId\": \"{{destinationCompanyId}}\",\n  \"segmentId\": \"{{segmentId}}\",\n  \"justification\": \"Teste Postman – doação\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201/400/404', () => pm.expect(pm.response.code).to.be.oneOf([201, 400, 404]));",
+                  "if(pm.response.code===201) pm.collectionVariables.set('externalRelocationId', pm.response.json().id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Operador não aprova → 403",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/relocations/internal/{{relocationId}}/review",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"APROVADA\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 403', () => pm.expect(pm.response.code).to.be.oneOf([403]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login (Renata – Gerente)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{emailManager}}\",\n  \"password\": \"{{password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const j = pm.response.json();",
+                  "pm.test('token Bearer', () => { pm.expect(j.token).to.be.a('string'); pm.expect(j.tokenType).to.eql('Bearer'); });",
+                  "pm.collectionVariables.set('token', j.token);",
+                  "pm.collectionVariables.set('today', new Date().toISOString().slice(0,10));",
+                  "pm.collectionVariables.set('inTenDays', new Date(Date.now()+10*86400000).toISOString().slice(0,19));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Aprovar interna",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/relocations/internal/{{relocationId}}/review",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"APROVADA\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200/400/404', () => pm.expect(pm.response.code).to.be.oneOf([200, 400, 404]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Concluir interna",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/relocations/internal/{{relocationId}}/complete"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200/400/404', () => pm.expect(pm.response.code).to.be.oneOf([200, 400, 404]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Rejeitar externa",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/relocations/external/{{externalRelocationId}}/review",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"REJEITADA\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200/400/404', () => pm.expect(pm.response.code).to.be.oneOf([200, 400, 404]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Realocações internas",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/relocations/internal?status=CONCLUIDA"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const p=pm.response.json();",
+                  "pm.test('resposta paginada', () => { pm.expect(p).to.have.property('content'); pm.expect(p).to.have.property('totalElements'); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
