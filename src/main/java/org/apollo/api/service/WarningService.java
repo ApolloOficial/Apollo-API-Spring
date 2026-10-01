@@ -1,80 +1,113 @@
 package org.apollo.api.service;
 
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
 import lombok.RequiredArgsConstructor;
 import org.apollo.api.dto.WarningDTO;
+import org.apollo.api.enums.PriorityEnum;
 import org.apollo.api.enums.WarningStatusEnum;
-import org.apollo.api.exception.BusinessRuleException;
+import org.apollo.api.enums.WarningTypeEnum;
 import org.apollo.api.exception.ResourceNotFoundException;
+import org.apollo.api.model.Inverter;
 import org.apollo.api.model.Panel;
+import org.apollo.api.model.PanelString;
 import org.apollo.api.model.Warning;
-import org.apollo.api.repository.PanelRepository;
+import org.apollo.api.repository.MaintenanceRegisterRepository;
 import org.apollo.api.repository.WarningRepository;
 import org.apollo.api.security.TenantContext;
+import org.apollo.api.util.Scope;
+import org.apollo.api.util.Specs;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class WarningService {
 
     private final WarningRepository warningRepository;
-    private final PanelRepository panelRepository;
+    private final MaintenanceRegisterRepository maintenanceRegisterRepository;
     private final TenantContext tenantContext;
 
-    public List<WarningDTO> findAll() {
-        return warningRepository.findAllByPanelBatchCompanyUnitCompanyId(companyId()).stream().map(this::toDTO).toList();
+    public Page<WarningDTO> findAll(PriorityEnum severity, WarningTypeEnum type, WarningStatusEnum status,
+                                    UUID companyUnitId, UUID stringId, Long panelId, Pageable pageable) {
+        Specification<Warning> spec = Specification
+                .where(inCompany(companyId()))
+                .and(Specs.<Warning>equalTo(w -> w.get("severity"), severity))
+                .and(Specs.<Warning>equalTo(w -> w.get("type"), type))
+                .and(Specs.<Warning>equalTo(w -> w.get("status"), status))
+                .and(companyUnitId == null ? null : inUnit(companyUnitId))
+                .and(stringId == null ? null : forString(stringId))
+                .and(Specs.<Warning>equalTo(w -> w.get("panel").get("id"), panelId));
+        Page<Warning> page = warningRepository.findAll(spec, pageable);
+        Map<Long, Long> maintenanceByWarning = maintenanceIds(page.getContent());
+        return page.map(w -> toDTO(w, maintenanceByWarning.get(w.getId())));
     }
 
     public WarningDTO findById(Long id) {
-        return toDTO(findWarning(id));
+        Specification<Warning> spec = Specification
+                .where(inCompany(companyId()))
+                .and(Specs.<Warning>equalTo(w -> w.get("id"), id));
+        Warning warning = warningRepository.findOne(spec)
+                .orElseThrow(() -> new ResourceNotFoundException("Warning not found: " + id));
+        return toDTO(warning, maintenanceIds(List.of(warning)).get(warning.getId()));
     }
 
-    public WarningDTO create(WarningDTO dto) {
-        Panel panel = findPanel(dto.getPanelId());
-        Warning warning = new Warning();
-        warning.setPanel(panel);
-        applyFields(warning, dto);
-        return toDTO(warningRepository.save(warning));
+    private Specification<Warning> inCompany(Long companyId) {
+        return (root, query, cb) -> Scope.warningInCompany(cb, root, companyId);
     }
 
-    public WarningDTO resolve(Long id) {
-        Warning warning = findWarning(id);
-        warning.setStatus(WarningStatusEnum.RESOLVIDO);
-        warning.setResolvedAt(LocalDateTime.now());
-        return toDTO(warningRepository.save(warning));
+    private Specification<Warning> inUnit(UUID unitId) {
+        return (root, query, cb) -> Scope.warningInUnit(cb, root, unitId);
     }
 
-    public void delete(Long id) {
-        warningRepository.delete(findWarning(id));
+    // O alerta e da string (alerta de string) ou de uma placa que pertence a essa string.
+    private Specification<Warning> forString(UUID stringId) {
+        return (root, query, cb) -> {
+            Join<Object, Object> panelString = root.join("panel", JoinType.LEFT).join("panelString", JoinType.LEFT);
+            return cb.or(
+                    cb.equal(root.get("panelString").get("id"), stringId),
+                    cb.equal(panelString.get("id"), stringId));
+        };
     }
 
-    private void applyFields(Warning warning, WarningDTO dto) {
-        warning.setType(dto.getType());
-        warning.setSeverity(dto.getSeverity());
-        warning.setMessage(dto.getMessage());
-        if (dto.getStatus() == WarningStatusEnum.RESOLVIDO) {
-            throw new BusinessRuleException("Use o endpoint de resolução para marcar como resolvido");
+    private Map<Long, Long> maintenanceIds(List<Warning> warnings) {
+        Map<Long, Long> result = new HashMap<>();
+        if (warnings.isEmpty()) {
+            return result;
         }
-        warning.setStatus(dto.getStatus() != null ? dto.getStatus() : WarningStatusEnum.ATIVO);
+        List<Long> ids = warnings.stream().map(Warning::getId).toList();
+        for (Object[] row : maintenanceRegisterRepository.findIdsByWarningIds(ids)) {
+            result.put((Long) row[0], (Long) row[1]);
+        }
+        return result;
     }
 
-    private Warning findWarning(Long id) {
-        return warningRepository.findByIdAndPanelBatchCompanyUnitCompanyId(id, companyId())
-                .orElseThrow(() -> new ResourceNotFoundException("Alerta não encontrado: " + id));
-    }
-
-    private Panel findPanel(Long id) {
-        return panelRepository.findByIdAndBatchCompanyUnitCompanyId(id, companyId())
-                .orElseThrow(() -> new ResourceNotFoundException("Painel não encontrado: " + id));
+    private WarningDTO toDTO(Warning w, Long maintenanceId) {
+        Panel panel = w.getPanel();
+        PanelString string = w.getPanelString() != null ? w.getPanelString()
+                : (panel != null ? panel.getPanelString() : null);
+        Inverter inverter = string != null ? string.getInverter() : null;
+        return new WarningDTO(w.getId(),
+                string != null ? string.getId() : null,
+                string != null ? string.getCode() : null,
+                inverter != null ? inverter.getCode() : null,
+                panel != null ? panel.getId() : null,
+                panel != null ? panel.getSerialNumber() : null,
+                inverter != null ? inverter.getCompanyUnit().getId() : null,
+                w.getType(), w.getSeverity(), w.getStatus(), w.getMessage(), w.getReportedBy(),
+                w.getGenerationDt(), w.getResolvedAt(), maintenanceId);
     }
 
     private Long companyId() {
         return tenantContext.getCompanyId();
-    }
-
-    private WarningDTO toDTO(Warning w) {
-        return new WarningDTO(w.getId(), w.getPanel().getId(), w.getType(), w.getSeverity(), w.getStatus(), w.getMessage());
     }
 }

@@ -1,27 +1,15 @@
 package org.apollo.api.dto;
 
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 import org.apollo.api.enums.RelocationStatusEnum;
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-public class SuggestedExternalRelocationDTO {
-    private Long id;
+import java.time.LocalDateTime;
+import java.util.UUID;
 
-    @NotNull(message = "Painel é obrigatório")
-    private Long panelId;
-
-    @NotNull(message = "Empresa de destino é obrigatória")
-    private Long destinationCompanyId;
-
-    @NotNull(message = "Segmento é obrigatório")
-    private Long segmentId;
-
-    @NotBlank private String justification;
-    private RelocationStatusEnum status;
+public record SuggestedExternalRelocationDTO(Long id, Long panelId, String panelSerial, UUID originUnitId,
+                                             String originUnitName, Long destinationCompanyId,
+                                             String destinationCompanyName, Long segmentId, String segmentName,
+                                             UUID requestedById, String requestedByName, UUID reviewedById,
+                                             String reviewedByName, String justification,
+                                             RelocationStatusEnum status, LocalDateTime suggestedAt,
+                                             LocalDateTime reviewedAt) {
 }

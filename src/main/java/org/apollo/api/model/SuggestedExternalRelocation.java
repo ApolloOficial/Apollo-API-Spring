@@ -1,18 +1,19 @@
 package org.apollo.api.model;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.apollo.api.enums.RelocationStatusEnum;
 
 import java.time.LocalDateTime;
 
+// Sugestao de doar/mover UMA placa para outra empresa.
 @Entity
 @Table(name = "suggested_external_relocation")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
-@AllArgsConstructor
 public class SuggestedExternalRelocation {
 
     @Id
@@ -31,15 +32,23 @@ public class SuggestedExternalRelocation {
     @JoinColumn(name = "segment_id", nullable = false)
     private Segment segment;
 
-    @Column(name = "justification", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "requested_by", nullable = false)
+    private Employee requestedBy;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "reviewed_by")
+    private Employee reviewedBy;
+
+    @Column(name = "justification", nullable = false, columnDefinition = "TEXT")
     private String justification;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 20)
     private RelocationStatusEnum status = RelocationStatusEnum.PENDENTE;
 
-    @Column(name = "suggested_at", nullable = false, updatable = false)
-    private LocalDateTime suggestedAt = LocalDateTime.now();
+    @Column(name = "suggested_at", nullable = false)
+    private LocalDateTime suggestedAt;
 
     @Column(name = "reviewed_at")
     private LocalDateTime reviewedAt;

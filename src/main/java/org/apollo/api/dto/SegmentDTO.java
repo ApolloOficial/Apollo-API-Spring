@@ -13,8 +13,8 @@ public class SegmentDTO {
 
     private Long id;
 
-    @NotBlank(message = "Nome é obrigatório")
-    @Size(max = 100, message = "Nome deve ter no máximo 100 caracteres")
+    @NotBlank(message = "Name is required")
+    @Size(max = 100, message = "Name must be at most 100 characters")
     private String name;
 
     private String description;

@@ -11,6 +11,7 @@ import java.util.UUID;
 
 public class AuthenticatedUser implements UserDetails {
     private final UUID userId;
+    private final String fullName;
     private final Long companyId;
     private final UUID companyUnitId;
     private final String userType;
@@ -22,6 +23,7 @@ public class AuthenticatedUser implements UserDetails {
 
     public AuthenticatedUser(AuthUser user) {
         this.userId = user.getUserId();
+        this.fullName = user.getFullName();
         this.companyId = user.getCompanyId();
         this.companyUnitId = user.getCompanyUnitId();
         this.userType = user.getUserType();
@@ -38,14 +40,21 @@ public class AuthenticatedUser implements UserDetails {
             case "ADMINISTRADOR", "ADMINISTRATOR" -> "ADMINISTRATOR";
             case "OPERADOR", "OPERATOR" -> "OPERATOR";
             case "ANALISTA", "ANALYST" -> "ANALYST";
-            case "GERENTE", "MANAGER" -> "GERENTE";
+            // BUG FIX: this used to return "GERENTE" (the Portuguese DB value) while
+            // TenantContext.roleRank() and SecurityConfig both expect "MANAGER". That
+            // mismatch made every manager fall into roleRank()'s default case (rank 0),
+            // silently breaking requireCanAssign()/requireRoleAtLeast() for the whole
+            // MANAGER role (e.g. a manager could not be allowed to assign a TECHNICIAN,
+            // since 1 > 0). Standardized on the English name everywhere.
+            case "GERENTE", "MANAGER" -> "MANAGER";
             case "TECNICO", "TECHNICIAN" -> "TECHNICIAN";
             case "SUPER_ADMIN" -> "SUPER_ADMIN";
-            default -> throw new IllegalArgumentException("Perfil não reconhecido");
+            default -> throw new IllegalArgumentException("Unrecognized role");
         };
     }
 
     public UUID getUserId() { return userId; }
+    public String getFullName() { return fullName; }
     public Long getCompanyId() { return companyId; }
     public UUID getCompanyUnitId() { return companyUnitId; }
     public String getUserType() { return userType; }

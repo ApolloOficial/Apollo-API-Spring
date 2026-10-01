@@ -11,10 +11,10 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class ChangePasswordDTO {
 
-    @NotBlank(message = "Senha atual é obrigatória")
+    @NotBlank(message = "Current password is required")
     private String currentPassword;
 
-    @NotBlank(message = "Nova senha é obrigatória")
-    @Size(min = 8, max = 72, message = "Nova senha deve ter entre 8 e 72 caracteres")
+    @NotBlank(message = "New password is required")
+    @Size(min = 8, max = 72, message = "New password must be between 8 and 72 characters")
     private String newPassword;
 }

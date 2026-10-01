@@ -1,19 +1,19 @@
 package org.apollo.api.model;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.apollo.api.enums.RelocationStatusEnum;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
 
+// Sugestao de mover placas de uma string para outra filial da MESMA empresa.
 @Entity
 @Table(name = "suggested_internal_relocation")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
-@AllArgsConstructor
 public class SuggestedInternalRelocation {
 
     @Id
@@ -21,8 +21,8 @@ public class SuggestedInternalRelocation {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "batch_id", nullable = false)
-    private Batch batch;
+    @JoinColumn(name = "string_id", nullable = false)
+    private PanelString panelString;
 
     @Column(name = "quantity", nullable = false)
     private Integer quantity;
@@ -39,21 +39,16 @@ public class SuggestedInternalRelocation {
     @JoinColumn(name = "reviewed_by")
     private Employee reviewedBy;
 
-    @Column(name = "justification", nullable = false)
+    @Column(name = "justification", nullable = false, columnDefinition = "TEXT")
     private String justification;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 20)
     private RelocationStatusEnum status = RelocationStatusEnum.PENDENTE;
 
-    @Column(name = "suggested_at", nullable = false, updatable = false)
-    private LocalDateTime suggestedAt = LocalDateTime.now();
+    @Column(name = "suggested_at", nullable = false)
+    private LocalDateTime suggestedAt;
 
     @Column(name = "reviewed_at")
     private LocalDateTime reviewedAt;
-
-    @Transient
-    public UUID getBatchId() {
-        return batch != null ? batch.getId() : null;
-    }
 }

@@ -22,18 +22,33 @@ class GlobalExceptionHandlerTest {
         assertEquals(HttpStatus.CONFLICT, response.getStatusCode());
         assertNotNull(response.getBody());
         assertEquals(HttpStatus.CONFLICT.value(), response.getBody().getStatus());
-        assertEquals("Operação viola uma restrição de integridade dos dados", response.getBody().getMessage());
+        assertEquals("Operation violates a data integrity constraint", response.getBody().getMessage());
     }
 
     @Test
     void shouldPreserveResponseStatusExceptions() {
         ResponseEntity<ErrorResponse> response = exceptionHandler.status(
-                new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Credenciais inválidas")
+                new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials")
         );
 
         assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
         assertNotNull(response.getBody());
         assertEquals(HttpStatus.UNAUTHORIZED.value(), response.getBody().getStatus());
-        assertEquals("Credenciais inválidas", response.getBody().getMessage());
+        assertEquals("Invalid credentials", response.getBody().getMessage());
+    }
+
+    // Regras de negocio do banco (RAISE EXCEPTION em trigger/procedure => SQLSTATE P0001) viram 400
+    // com a primeira linha da mensagem, sem o prefixo "ERROR:".
+    @Test
+    void shouldReturnBadRequestWhenDatabaseRaisesBusinessRule() {
+        java.sql.SQLException sql = new java.sql.SQLException(
+                "ERROR: Panel is not in stock\n  Where: PL/pgSQL function pr_activate_panel", "P0001");
+
+        ResponseEntity<ErrorResponse> response = exceptionHandler.conflict(
+                new DataIntegrityViolationException("could not execute statement", sql));
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals("Panel is not in stock", response.getBody().getMessage());
     }
 }
