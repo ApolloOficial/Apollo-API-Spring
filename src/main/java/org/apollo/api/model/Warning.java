@@ -1,19 +1,22 @@
 package org.apollo.api.model;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.apollo.api.enums.PriorityEnum;
 import org.apollo.api.enums.WarningStatusEnum;
+import org.apollo.api.enums.WarningTypeEnum;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
+// Alerta. Aponta para uma string (gerado pelo sistema) OU para uma placa (relato do tecnico).
 @Entity
 @Table(name = "warning")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
-@AllArgsConstructor
 public class Warning {
 
     @Id
@@ -21,25 +24,33 @@ public class Warning {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "panel_id", nullable = false)
+    @JoinColumn(name = "string_id")
+    private PanelString panelString;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "panel_id")
     private Panel panel;
 
-    @Column(name = "type", nullable = false, length = 50)
-    private String type;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "type", nullable = false, length = 30)
+    private WarningTypeEnum type;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "severity", nullable = false, length = 10)
-    private PriorityEnum severity = PriorityEnum.MÉDIA;
+    private PriorityEnum severity = PriorityEnum.MEDIA;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 20)
     private WarningStatusEnum status = WarningStatusEnum.ATIVO;
 
-    @Column(name = "message", nullable = false)
+    @Column(name = "message", nullable = false, columnDefinition = "TEXT")
     private String message;
 
-    @Column(name = "generation_dt", nullable = false, updatable = false)
-    private LocalDateTime generationDt = LocalDateTime.now();
+    @Column(name = "reported_by")
+    private UUID reportedBy;
+
+    @Column(name = "generation_dt", nullable = false)
+    private LocalDateTime generationDt;
 
     @Column(name = "resolved_at")
     private LocalDateTime resolvedAt;
