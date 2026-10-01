@@ -3,6 +3,7 @@ package org.apollo.api.exception;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.InvalidDataAccessApiUsageException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -38,27 +39,47 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler({HttpMessageNotReadableException.class, MethodArgumentTypeMismatchException.class, MissingServletRequestParameterException.class, IllegalArgumentException.class})
     ResponseEntity<ErrorResponse> badRequest(Exception ex) {
-        return error(HttpStatus.BAD_REQUEST, "Requisição inválida");
+        // O motivo real vai so para o log (ex.: parametro com valor invalido); a
+        // resposta ao cliente continua generica.
+        log.warn("Bad request: {}", ex.getMessage());
+        return error(HttpStatus.BAD_REQUEST, "Invalid request");
+    }
+
+    // sort=... com campo inexistente (ex.: ["string"] ou id: ASC) nas listagens que ainda usam
+    // Pageable: devolve 400 com a dica de uso em vez de 500.
+    @ExceptionHandler(InvalidDataAccessApiUsageException.class)
+    ResponseEntity<ErrorResponse> invalidSort(Exception ex, HttpServletRequest request) {
+        String message = String.valueOf(ex.getMessage());
+        if (message.contains("Sort expression") || message.contains("No property")) {
+            log.warn("Invalid sort/property: {}", message);
+            return error(HttpStatus.BAD_REQUEST, "Invalid sort field. Use sort=field,asc (example: sort=id,asc)");
+        }
+        return generic(ex, request);
     }
 
     @ExceptionHandler(AccessDeniedException.class)
     ResponseEntity<ErrorResponse> forbidden(AccessDeniedException ex) {
-        return error(HttpStatus.FORBIDDEN, "Acesso negado");
+        return error(HttpStatus.FORBIDDEN, "Access denied");
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)
     ResponseEntity<ErrorResponse> conflict(DataIntegrityViolationException ex) {
-        return error(HttpStatus.CONFLICT, "Operação viola uma restrição de integridade dos dados");
+        // O detalhe (nome da constraint/FK) so vai para o log do servidor; a resposta
+        // ao cliente continua generica para nao expor a estrutura do banco.
+        String dbMessage = businessMessageFromDb(ex);
+        if (dbMessage != null) return error(HttpStatus.BAD_REQUEST, dbMessage);
+        log.warn("Data integrity violation: {}", ex.getMostSpecificCause().getMessage());
+        return error(HttpStatus.CONFLICT, "Operation violates a data integrity constraint");
     }
 
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
     ResponseEntity<ErrorResponse> method(HttpRequestMethodNotSupportedException ex) {
-        return error(HttpStatus.METHOD_NOT_ALLOWED, "Método HTTP não permitido");
+        return error(HttpStatus.METHOD_NOT_ALLOWED, "HTTP method not allowed");
     }
 
     @ExceptionHandler(NoHandlerFoundException.class)
     ResponseEntity<ErrorResponse> route(NoHandlerFoundException ex) {
-        return error(HttpStatus.NOT_FOUND, "Rota não encontrada");
+        return error(HttpStatus.NOT_FOUND, "Route not found");
     }
 
     @ExceptionHandler(ResponseStatusException.class)
@@ -68,7 +89,27 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     ResponseEntity<ErrorResponse> generic(Exception ex, HttpServletRequest request) {
-        log.error("Erro não tratado em {} {}", request.getMethod(), request.getRequestURI(), ex); return error(HttpStatus.INTERNAL_SERVER_ERROR, "Erro interno do servidor");
+        // Regras de negocio do banco (RAISE EXCEPTION em trigger/procedure => SQLSTATE P0001) viram 400.
+        String dbMessage = businessMessageFromDb(ex);
+        if (dbMessage != null) {
+            log.warn("Business rule from database: {}", dbMessage);
+            return error(HttpStatus.BAD_REQUEST, dbMessage);
+        }
+        log.error("Unhandled error in {} {}", request.getMethod(), request.getRequestURI(), ex); return error(HttpStatus.INTERNAL_SERVER_ERROR, "Internal server error");
+    }
+
+    private static String businessMessageFromDb(Throwable ex) {
+        for (Throwable t = ex; t != null; t = t.getCause()) {
+            if (t instanceof java.sql.SQLException sql && "P0001".equals(sql.getSQLState())) {
+                String message = String.valueOf(sql.getMessage());
+                int nl = message.indexOf('\n');
+                if (nl >= 0) message = message.substring(0, nl);
+                message = message.replaceFirst("^(ERROR|ERRO):\\s*", "").trim();
+                return message.isEmpty() ? "Business rule violated" : message;
+            }
+            if (t.getCause() == t) break;
+        }
+        return null;
     }
 
     private ResponseEntity<ErrorResponse> error(HttpStatus status, String message) {
