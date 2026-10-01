@@ -69,7 +69,7 @@ public class JwtService {
         String role = claims.get("role", String.class);
         String email = claims.getSubject();
         if (role == null || role.isBlank() || email == null || email.isBlank()) {
-            throw new IllegalArgumentException("JWT sem identidade obrigatória");
+            throw new IllegalArgumentException("JWT missing required identity");
         }
         String companyUnitIdClaim = claims.get("companyUnitId", String.class);
         UUID companyUnitId = (companyUnitIdClaim == null || companyUnitIdClaim.isBlank())
@@ -81,19 +81,19 @@ public class JwtService {
     private UUID getRequiredUUID(Claims claims, String claim) {
         Object value = claims.get(claim);
         if (value == null || value.toString().isBlank()) {
-            throw new IllegalArgumentException("JWT sem claim obrigatória: " + claim);
+            throw new IllegalArgumentException("JWT missing required claim: " + claim);
         }
         try {
             return UUID.fromString(value.toString());
         } catch (IllegalArgumentException ex) {
-            throw new IllegalArgumentException("JWT com claim inválida: " + claim);
+            throw new IllegalArgumentException("JWT with invalid claim: " + claim);
         }
     }
 
     private Long getRequiredLong(Claims claims, String claim) {
         Number value = claims.get(claim, Number.class);
         if (value == null) {
-            throw new IllegalArgumentException("JWT sem claim obrigatória: " + claim);
+            throw new IllegalArgumentException("JWT missing required claim: " + claim);
         }
         return value.longValue();
     }
