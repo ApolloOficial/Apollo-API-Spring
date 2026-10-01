@@ -13,10 +13,12 @@ import lombok.RequiredArgsConstructor;
 import org.apollo.api.exception.ErrorResponse;
 import org.apollo.api.dto.AddressDTO;
 import org.apollo.api.service.AddressService;
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/addresses")
@@ -28,10 +30,10 @@ public class AddressController {
     private final AddressService addressService;
 
     @GetMapping
-    @Operation(summary = "List addresses")
+    @Operation(summary = "List addresses (paginated, tenant-scoped)")
     @ApiResponse(responseCode = "200", description = "Addresses returned successfully")
-    public List<AddressDTO> findAll() {
-        return addressService.findAll();
+    public Page<AddressDTO> findAll(@ParameterObject @PageableDefault(size = 20, sort = "id") Pageable pageable) {
+        return addressService.findAll(pageable);
     }
 
     @GetMapping("/{id}")
@@ -40,7 +42,7 @@ public class AddressController {
             @ApiResponse(responseCode = "200", description = "Address returned successfully"),
             @ApiResponse(responseCode = "404", description = "Address not found",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class),
-                            examples = @ExampleObject(value = "{\"status\": 404, \"message\": \"Endereço não encontrado: 1\"}")))
+                            examples = @ExampleObject(value = "{\"status\": 404, \"message\": \"Address not found: 1\"}")))
     })
     public AddressDTO findById(@PathVariable Long id) {
         return addressService.findById(id);
@@ -53,7 +55,7 @@ public class AddressController {
             @ApiResponse(responseCode = "201", description = "Address created successfully"),
             @ApiResponse(responseCode = "400", description = "Invalid address data",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class),
-                            examples = @ExampleObject(value = "{\"status\": 400, \"message\": \"streetName: Logradouro é obrigatório\"}")))
+                            examples = @ExampleObject(value = "{\"status\": 400, \"message\": \"streetName: Street name is required\"}")))
     })
     public AddressDTO create(@Valid @RequestBody AddressDTO dto) {
         return addressService.create(dto);
@@ -65,10 +67,10 @@ public class AddressController {
             @ApiResponse(responseCode = "200", description = "Address updated successfully"),
             @ApiResponse(responseCode = "400", description = "Invalid address data",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class),
-                            examples = @ExampleObject(value = "{\"status\": 400, \"message\": \"streetName: Logradouro é obrigatório\"}"))),
+                            examples = @ExampleObject(value = "{\"status\": 400, \"message\": \"streetName: Street name is required\"}"))),
             @ApiResponse(responseCode = "404", description = "Address not found",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class),
-                            examples = @ExampleObject(value = "{\"status\": 404, \"message\": \"Endereço não encontrado: 1\"}")))
+                            examples = @ExampleObject(value = "{\"status\": 404, \"message\": \"Address not found: 1\"}")))
     })
     public AddressDTO update(@PathVariable Long id, @Valid @RequestBody AddressDTO dto) {
         return addressService.update(id, dto);
@@ -81,7 +83,7 @@ public class AddressController {
             @ApiResponse(responseCode = "204", description = "Address deleted successfully"),
             @ApiResponse(responseCode = "404", description = "Address not found",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class),
-                            examples = @ExampleObject(value = "{\"status\": 404, \"message\": \"Endereço não encontrado: 1\"}")))
+                            examples = @ExampleObject(value = "{\"status\": 404, \"message\": \"Address not found: 1\"}")))
     })
     public void delete(@PathVariable Long id) {
         addressService.delete(id);
