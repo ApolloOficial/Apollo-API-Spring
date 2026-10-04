@@ -118,6 +118,19 @@ class SecurityConfigTest {
     }
 
     @Test
+    void shouldAllowTechnicianToUseChat() throws Exception {
+        authenticate("technician-token", "TECHNICIAN");
+        mockMvc.perform(post("/api/v1/chat/messages").header(HttpHeaders.AUTHORIZATION, "Bearer technician-token"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void shouldRequireAuthenticationForChat() throws Exception {
+        mockMvc.perform(post("/api/v1/chat/messages"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
     void shouldRejectOperatorWritingEmployees() throws Exception {
         authenticate("operator-token", "OPERATOR");
         mockMvc.perform(post("/api/v1/employees").header(HttpHeaders.AUTHORIZATION, "Bearer operator-token"))
