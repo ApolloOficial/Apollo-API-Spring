@@ -18,6 +18,7 @@ public class AuthenticatedUser implements UserDetails {
     private final String email;
     private final String password;
     private final boolean active;
+    private final boolean firstAccess;
     private final String roleName;
     private final Collection<? extends GrantedAuthority> authorities;
 
@@ -30,6 +31,7 @@ public class AuthenticatedUser implements UserDetails {
         this.email = user.getEmail();
         this.password = user.getPasswordHash();
         this.active = user.isActive();
+        this.firstAccess = user.isFirstAccess();
         this.roleName = canonicalRole(user.getRole().getName());
         this.authorities = List.of(new SimpleGrantedAuthority("ROLE_" + roleName));
     }
@@ -60,6 +62,7 @@ public class AuthenticatedUser implements UserDetails {
     public String getUserType() { return userType; }
     public String getEmail() { return email; }
     public String getRoleName() { return roleName; }
+    public boolean isFirstAccess() { return firstAccess; }
     @Override public Collection<? extends GrantedAuthority> getAuthorities() { return authorities; }
     @Override public String getPassword() { return password; }
     @Override public String getUsername() { return email; }
@@ -67,4 +70,5 @@ public class AuthenticatedUser implements UserDetails {
     @Override public boolean isAccountNonExpired() { return true; }
     @Override public boolean isAccountNonLocked() { return true; }
     @Override public boolean isCredentialsNonExpired() { return true; }
+
 }
