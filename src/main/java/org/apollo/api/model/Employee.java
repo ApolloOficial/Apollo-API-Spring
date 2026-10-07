@@ -37,6 +37,9 @@ public class Employee {
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
 
+    @Column(name = "is_first_access", nullable = false)
+    private Boolean isFirstAccess = true;
+
     @Column(name = "fcm_token", length = 300)
     private String fcmToken;
 

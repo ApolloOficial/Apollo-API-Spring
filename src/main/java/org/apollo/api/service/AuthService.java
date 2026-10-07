@@ -50,7 +50,8 @@ public class AuthService {
         }
         attempts.remove(key);
         registerAccess(request.getEmail(), "SUCESSO");
-        return new LoginResponseDTO(jwtService.generateToken(matchingUsers.getFirst()), "Bearer");
+        AuthenticatedUser user = matchingUsers.getFirst();
+        return new LoginResponseDTO(jwtService.generateToken(user), "Bearer", user.isFirstAccess());
     }
 
     public void changePassword(UUID employeeId, Long companyId, ChangePasswordDTO dto) {
@@ -63,6 +64,7 @@ public class AuthService {
             throw new BusinessRuleException("The new password must be different from the current password");
         }
         employee.setPasswordHash(passwordEncoder.encode(dto.getNewPassword()));
+        employee.setIsFirstAccess(false);
         employeeRepository.save(employee);
     }
 

@@ -44,6 +44,9 @@ public class AuthUser {
     @Column(name = "is_active", nullable = false)
     private boolean active;
 
+    @Column(name = "is_first_access", nullable = false)
+    private boolean firstAccess;
+
     public String getUserType() {
         return "EMPLOYEE";
     }

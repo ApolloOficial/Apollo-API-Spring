@@ -11,4 +11,5 @@ public class LoginResponseDTO {
 
     private String token;
     private String tokenType;
+    private boolean isFirstAccess;
 }
