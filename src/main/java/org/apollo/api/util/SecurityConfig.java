@@ -107,7 +107,9 @@ public class SecurityConfig {
                                 "/api/v1/panels/report-issue").hasRole(TECHNICIAN)
                         .requestMatchers(HttpMethod.GET, "/api/v1/panels/**").hasAnyRole(MANAGER, OPERATOR, ANALYST, TECHNICIAN)
 
-                        // Alertas: leitura (os alertas nascem de triggers/procedures).
+                        // Alertas: leitura (os alertas nascem de triggers/procedures);
+                        // o Operador abre a ordem de servico a partir de um alerta.
+                        .requestMatchers(HttpMethod.POST, "/api/v1/warnings/*/service-order").hasRole(OPERATOR)
                         .requestMatchers(HttpMethod.GET, "/api/v1/warnings/**").hasAnyRole(MANAGER, OPERATOR, ANALYST, TECHNICIAN)
 
                         // Ordens de servico: Operador abre/cancela; Tecnico inicia/conclui e lanca pecas.
