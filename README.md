@@ -1,17 +1,18 @@
 <div align="center">
 
-# ☀️ Apollo API
+# ☀️ Apollo BI
 
-### Gestão inteligente do ciclo de vida de painéis solares
+### Métricas de saúde e sustentabilidade dos ativos solares do Apollo
 
-API REST desenvolvida para centralizar o cadastro de lotes, painéis solares,
-unidades empresariais e registros de manutenção do ecossistema **Apollo**.
+Pipeline de dados em arquitetura medalhão no **Databricks**, que lê o banco do
+Apollo no Neon, calcula os índices de sustentabilidade (IS) e alimenta o dashboard
+embutido na web.
 
-[![Java](https://img.shields.io/badge/Java-21-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white)](https://openjdk.org/projects/jdk/21/)
-[![Spring Boot](https://img.shields.io/badge/Spring_Boot-4.1-6DB33F?style=for-the-badge&logo=springboot&logoColor=white)](https://spring.io/projects/spring-boot)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
-[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://docs.docker.com/compose/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)](LICENSE)
+[![Databricks](https://img.shields.io/badge/Databricks-Free_Edition-FF3621?style=for-the-badge&logo=databricks&logoColor=white)](https://www.databricks.com/)
+[![Python](https://img.shields.io/badge/PySpark-Python-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://spark.apache.org/docs/latest/api/python/)
+[![Neon](https://img.shields.io/badge/Neon-PostgreSQL-00E599?style=for-the-badge&logo=postgresql&logoColor=white)](https://neon.tech/)
+[![Delta Lake](https://img.shields.io/badge/Delta_Lake-Medalh%C3%A3o-00ADD4?style=for-the-badge)](https://delta.io/)
+[![GitHub](https://img.shields.io/badge/GitHub-Git_folders-181717?style=for-the-badge&logo=github&logoColor=white)](https://docs.databricks.com/aws/en/repos/)
 
 </div>
 
@@ -19,258 +20,237 @@ unidades empresariais e registros de manutenção do ecossistema **Apollo**.
 
 ## Sobre o projeto
 
-O **Apollo API** é o back-end do Projeto Interdisciplinar Apollo. A solução foi
-pensada para apoiar o acompanhamento de ativos fotovoltaicos, desde a aquisição
-em lote e instalação dos painéis até o registro de manutenções.
+O **Apollo** é uma plataforma SaaS multi-tenant para gestão do ciclo de vida de
+ativos fotovoltaicos em empresas industriais. O inversor mede o desempenho de cada
+string, e o Apollo usa esse dado real para gerar alertas, ordens de serviço e
+realocações de placas.
 
-Nesta etapa, a aplicação disponibiliza operações CRUD para **lotes** e
-**painéis**, além de já possuir a modelagem inicial de empresas, unidades,
-endereços, usuários, perfis de acesso, segmentos e manutenções.
+O **Apollo BI** é a camada de análise dessa plataforma. Ele lê o banco do Apollo
+no Neon, trata os dados em três camadas e calcula os índices que aparecem na aba
+**Métricas** da web. O **Gerente** e o **Analista** acessam o dashboard e veem
+apenas a própria filial.
 
-## Funcionalidades atuais
+> A unidade monitorada no Apollo é a **string**. A hierarquia dos ativos é:
+> empresa, filial, inversor, string e placa.
 
-- Cadastro, consulta, atualização e exclusão de lotes de painéis;
-- Cadastro, consulta, atualização e exclusão de painéis solares;
-- Associação de cada painel ao seu lote de origem;
-- Persistência em banco de dados PostgreSQL com Spring Data JPA;
-- Conversão entre entidades e DTOs na camada de serviço;
-- Resposta HTTP `404 Not Found` centralizada para recursos inexistentes;
-- Criação e atualização automática do esquema pelo Hibernate;
-- Ambiente PostgreSQL reproduzível com Docker Compose.
+## Dados de origem
+
+A fonte é o banco do Apollo no Neon (PostgreSQL, 24 tabelas). Os grupos de tabelas
+mais relevantes para o BI são:
+
+| Grupo | Tabelas |
+|---|---|
+| Organização | `company`, `company_unit`, `address`, `segment`, `employee`, `administrator` |
+| Ativos | `inverter`, `string`, `panel`, `inverter_model`, `panel_model` |
+| Medição e saúde | `string_performance_measurement`, `string_health_history` |
+| Alertas e manutenção | `warning`, `maintenance_register`, `maintenance_part`, `maintenance_type`, `part`, `stock` |
+| Histórico | `panel_status_history`, `access_log` |
+
+As medições por string (`power_w`, `voltage_v`, `current_a`, `generated_energy_kwh`,
+`fault_code`) vêm do inversor. Na demonstração, elas são geradas por um simulador, e
+a coluna `data_source` registra a origem de cada leitura.
+
+## Índices de sustentabilidade (IS)
+
+| Índice | O que mede |
+|---|---|
+| **IS Ambiental** | Vida útil do painel |
+| **IS Financeiro** | Custo do painel comparado ao que seria pago de energia sem o sistema |
+| **IS Energético** | Queda brusca na captação e desempenho abaixo do padrão da etiqueta do equipamento |
+| **IS Geral** | Combinação dos três índices, por filial |
+
+Regras de cálculo definidas pelo grupo:
+
+- Tudo o que não existir no banco atual fica de fora do cálculo. O schema não será alterado para isso;
+- cada IS é calculado por string (ou inversor) e depois agregado por filial;
+- não existe tabela por painel na camada final.
+
+## Funcionalidades previstas
+
+- Conexão com o Neon por JDBC, com credenciais em Databricks Secrets;
+- ingestão das tabelas do banco sem alteração na camada `raw`;
+- limpeza e padronização na camada `cleaned`;
+- cálculo dos quatro índices na camada `curated`;
+- dashboard (Lakeview) embutido na aba Métricas da web;
+- acesso restrito por filial (Row Filter) para Gerente e Analista;
+- Job no Databricks para executar o pipeline sem rodar célula por célula;
+- relatório gerencial com o fluxo do pipeline e a relação com os KPIs.
 
 ## Arquitetura
 
-O projeto segue uma arquitetura em camadas, mantendo as responsabilidades da
-API separadas:
+O fluxo segue a arquitetura medalhão, com nomes descritivos para cada camada:
 
 ```mermaid
 flowchart LR
-    C[Cliente HTTP] --> CT[Controller]
-    CT --> S[Service]
-    S --> R[Repository]
-    R --> J[Spring Data JPA]
-    J --> DB[(PostgreSQL)]
-    S <--> D[DTO]
-    S <--> M[Model]
-    E[Exception Handler] -. respostas de erro .-> C
+    I[Inversor ou simulador] --> N[(Neon PostgreSQL)]
+    N --> C[Notebook core]
+    C --> R[raw]
+    R --> CL[cleaned]
+    CL --> CU[curated]
+    CU --> D[Dashboard Lakeview]
+    D --> W[Web Apollo: aba Métricas]
+    J[Job do Databricks] -. orquestra .-> R
+    J -. orquestra .-> CL
+    J -. orquestra .-> CU
 ```
 
+| Camada | Equivalente medalhão | O que contém |
+|---|---|---|
+| `raw` | Bronze | Cópia fiel das tabelas do Neon, com data e origem da ingestão |
+| `cleaned` | Silver | Nomes padronizados, textos sem espaços extras, sem duplicatas exatas |
+| `curated` | Gold | Índices calculados por string e por filial, prontos para o dashboard |
+
 ```text
-src/
-├── main/
-│   ├── java/org/apollo/api/
-│   │   ├── controller/   # Endpoints REST
-│   │   ├── dto/          # Objetos de entrada e saída
-│   │   ├── enums/        # Estados controlados do domínio
-│   │   ├── exception/    # Exceções e tratamento centralizado
-│   │   ├── model/        # Entidades JPA
-│   │   ├── repository/   # Acesso aos dados
-│   │   └── service/      # Regras e casos de uso
-│   └── resources/        # Configuração da aplicação
-└── test/                 # Testes automatizados
+apollo-bi/
+├── apollo_core/
+│   └── apollo_connection_neon_core    # Conexão com o Neon e funções reutilizáveis
+├── apollo_pipeline/
+│   ├── raw_ingest                     # Neon para a camada raw
+│   ├── cleaned_transform              # raw para a camada cleaned
+│   └── curated_kpis                   # cleaned para a camada curated (cálculo dos IS)
+├── apollo_manager/                    # Dashboard principal (a criar)
+└── README.md
 ```
+
+As tabelas são salvas como `workspace.raw`, `workspace.cleaned` e
+`workspace.curated`. O catálogo e o schema de origem ficam nas variáveis do
+notebook core.
 
 ## Tecnologias
 
 | Tecnologia | Uso no projeto |
 |---|---|
-| Java 21 | Linguagem principal |
-| Spring Boot 4.1 | Configuração e execução da aplicação |
-| Spring Web MVC | Construção dos endpoints REST |
-| Spring Data JPA | Persistência e acesso ao banco |
-| PostgreSQL 17 | Banco de dados relacional |
-| Hibernate | Mapeamento objeto-relacional |
-| Lombok | Redução de código repetitivo |
-| Maven Wrapper | Build e gerenciamento de dependências |
-| Docker Compose | Banco local conteinerizado |
+| Databricks | Execução dos notebooks, Jobs e dashboard Lakeview |
+| PySpark | Leitura, tratamento e transformação dos dados |
+| Delta Lake | Armazenamento das tabelas de cada camada |
+| Neon (PostgreSQL) | Banco operacional do Apollo, fonte do BI |
+| JDBC | Conexão entre Databricks e Neon |
+| Databricks Secrets | Guarda segura das credenciais |
+| React | Web do Apollo, onde o dashboard é embutido |
+| GitHub | Versionamento e revisão do código |
 
 ## Como executar
 
 ### Pré-requisitos
 
-- [Java 21](https://adoptium.net/temurin/releases/?version=21);
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/) com Docker
-  Compose.
+- Acesso ao workspace do Databricks do Apollo;
+- Conta no GitHub com permissão de escrita neste repositório;
+- Personal Access Token do GitHub com escopo `repo`.
 
-> O Maven não precisa ser instalado: o repositório inclui o Maven Wrapper.
+> Não é preciso instalar nada na máquina. Todo o processamento roda no Databricks.
 
-### 1. Clone o repositório
+### 1. Conecte o GitHub ao Databricks
+
+No Databricks, acesse **Settings > Linked accounts > Git integration**, escolha
+GitHub e informe o seu Personal Access Token.
+
+### 2. Crie a Git folder
+
+Em **Workspace > Create > Git folder**, cole a URL do repositório e confirme:
+
+```text
+https://github.com/<ORGANIZACAO>/<REPOSITORIO>.git
+```
+
+Depois, troque para a sua branch no menu de branches, no topo da pasta.
+
+### 3. Configure as credenciais do Neon
+
+Esta etapa é feita **uma única vez, pelo dono do workspace**. Crie o escopo
+`apollo` com as quatro chaves abaixo usando o Databricks CLI:
 
 ```bash
-git clone https://github.com/ApolloOficial/Apollo-API-Spring.git
-cd Apollo-API-Spring
+databricks secrets create-scope apollo
+databricks secrets put-secret apollo neon_host
+databricks secrets put-secret apollo neon_db
+databricks secrets put-secret apollo neon_user
+databricks secrets put-secret apollo neon_password
 ```
 
-### 2. Inicie o PostgreSQL
+| Secret | Descrição |
+|---|---|
+| `neon_host` | Host do Neon, sem `https://` |
+| `neon_db` | Nome do banco |
+| `neon_user` | Usuário do banco |
+| `neon_password` | Senha do banco |
 
-```bash
-docker compose up -d
-```
+Os valores vêm da connection string do projeto no painel do Neon.
 
-O container será iniciado na porta `5432` e armazenará os dados no volume
-`apollo_postgres_data`.
+> Nunca escreva credenciais em notebooks, commits ou mensagens do grupo.
 
-### 3. Execute a API
+### 4. Teste a conexão
 
-No Windows:
+Abra `apollo_core/apollo_connection_neon_core` e use **Run all**. O resultado
+esperado é a lista de tabelas do Neon impressa na última célula.
 
-```powershell
-.\mvnw.cmd spring-boot:run
-```
+### 5. Execute o pipeline
 
-No Linux ou macOS:
+Rode os notebooks de `apollo_pipeline` nesta ordem:
 
-```bash
-./mvnw spring-boot:run
-```
+1. `raw_ingest`
+2. `cleaned_transform`
+3. `curated_kpis`
 
-A aplicação ficará disponível em `http://localhost:8080`.
-
-> O Spring Security já consta nas dependências, mas a autenticação definitiva
-> da API ainda está em desenvolvimento. Enquanto não houver uma configuração
-> própria, o Spring poderá gerar uma senha temporária no console ao iniciar.
-
-## Variáveis de ambiente
-
-A aplicação possui valores locais padrão, que podem ser sobrescritos sem
-alterar o código-fonte:
+## Configuração do notebook core
 
 | Variável | Padrão | Descrição |
 |---|---|---|
-| `DB_HOST` | `localhost` | Host do PostgreSQL |
-| `DB_PORT` | `5432` | Porta do PostgreSQL |
-| `DB_NAME` | `dbapollo` | Nome do banco |
-| `DB_USER` | `apollo` | Usuário do banco |
-| `DB_PASSWORD` | `apollo123` | Senha do banco |
+| `CATALOG` | `workspace` | Catálogo onde as camadas são criadas |
+| `NEON_SCHEMA` | `public` | Schema de origem no Neon (ajustar para o schema que o BI lê) |
+| `SECRET_SCOPE` | `apollo` | Escopo dos secrets no Databricks |
 
-Exemplo no PowerShell:
+## Requisitos da disciplina: Business Intelligence
 
-```powershell
-$env:DB_HOST = "localhost"
-$env:DB_PORT = "5432"
-$env:DB_NAME = "dbapollo"
-$env:DB_USER = "apollo"
-$env:DB_PASSWORD = "sua_senha"
-.\mvnw.cmd spring-boot:run
-```
-
-> Em produção, utilize segredos da plataforma de hospedagem e nunca versione
-> credenciais reais.
-
-## Endpoints disponíveis
-
-### Lotes
-
-Base URL: `/api/v1/batches`
-
-| Método | Rota | Ação |
-|---|---|---|
-| `GET` | `/api/v1/batches` | Lista todos os lotes |
-| `GET` | `/api/v1/batches/{id}` | Consulta um lote pelo ID |
-| `POST` | `/api/v1/batches` | Cadastra um lote |
-| `PUT` | `/api/v1/batches/{id}` | Atualiza um lote |
-| `DELETE` | `/api/v1/batches/{id}` | Exclui um lote |
-
-Exemplo de corpo para criação:
-
-```json
-{
-  "billNumber": "NF-2026-001",
-  "manufacturer": "Solar Tech",
-  "model": "ST-550M",
-  "acquisitionDt": "2026-05-14",
-  "panelsQtt": 100
-}
-```
-
-### Painéis
-
-Base URL: `/api/panels`
-
-| Método | Rota | Ação |
-|---|---|---|
-| `GET` | `/api/panels` | Lista todos os painéis |
-| `GET` | `/api/panels/{id}` | Consulta um painel pelo ID |
-| `POST` | `/api/panels` | Cadastra um painel |
-| `PUT` | `/api/panels/{id}` | Atualiza um painel |
-| `DELETE` | `/api/panels/{id}` | Exclui um painel |
-
-Exemplo de corpo para criação:
-
-```json
-{
-  "batchId": 1,
-  "coUnityId": 10,
-  "estimatedLifeCycle": 25,
-  "serialNumber": "APL-ST550-0001",
-  "barcode": "789000000001",
-  "operatingStatsEnum": "Operacional",
-  "ratedEfficiency": 21.5,
-  "installationDt": "2026-06-01"
-}
-```
-
-O campo `batchId` deve apontar para um lote já cadastrado.
-
-## Requisitos da disciplina — Desenvolvimento 2
-
-Esta seção relaciona a implementação atual aos critérios definidos para a
-disciplina em maio de 2026.
+Esta seção relaciona a implementação aos critérios definidos para a disciplina em
+maio de 2026.
 
 | Requisito | Situação | Evidência no projeto |
 |---|:---:|---|
-| API REST em Java com Spring MVC e PostgreSQL | ✅ | Controllers REST, Spring Web MVC e configuração do datasource PostgreSQL |
-| Integração com PostgreSQL usando Spring Data JPA | ✅ | Entidades JPA e interfaces em `repository/` |
-| Métodos CRUD por meio da API | ✅ | CRUD completo de lotes e painéis |
-| Separação de responsabilidades no padrão MVC | ✅ | Pacotes `controller`, `service`, `repository`, `model` e `dto` |
-| Validação das entradas recebidas | 🚧 | Restrições existem nas entidades; validação de DTOs com Bean Validation ainda é necessária |
-| Tratamento centralizado de exceções e respostas HTTP úteis | 🚧 | `GlobalExceptionHandler` trata recursos não encontrados; demais erros ainda precisam ser padronizados |
-| Documentação automática com Swagger | ⏳ | Planejado |
-| Acionamento de procedures e functions do banco | ⏳ | Planejado |
-| Autenticação e autorização com Spring Security | 🚧 | Dependências de Spring Security e JWT adicionadas; fluxo de autenticação ainda não concluído |
-| API REST adicional para banco NoSQL | ⏳ | Extra planejado |
+| Dashboard conectado à fonte de dados da aplicação | ⏳ | Será construído sobre a camada `curated` |
+| Gráficos de barra e linha | ⏳ | Evolução e comparação dos IS por filial e período |
+| Cards de KPIs e desvios | ⏳ | Um card por IS e para o IS Geral |
+| Histogramas e boxplots | ⏳ | Distribuição dos IS e da saúde das strings |
+| Mapa, se houver dados geográficos | ⏳ | A confirmar se `address` traz coordenadas das filiais |
+| Filtros interativos (período, filial) | ⏳ | Planejado no dashboard |
+| Relatório gerencial | ⏳ | Apresentação da base, problema, tratamento e KPIs |
+| Pipeline no Databricks (leitura, tratamento, KPIs, base final) | 🚧 | Estrutura criada em `apollo_pipeline`; cálculo dos IS ainda por implementar |
+| Pipeline usando a fonte gerada pela aplicação | 🚧 | Notebook core criado; falta validar com o schema definitivo do Neon |
+| Job para executar o pipeline sem rodar célula por célula | ⏳ | Planejado |
+| Evidências do Job (configuração, histórico, status, resultado) | ⏳ | Planejado |
 
 **Legenda:** ✅ concluído · 🚧 em desenvolvimento · ⏳ planejado
 
 ## Próximos passos
 
-- Adicionar Bean Validation aos DTOs e `@Valid` nos controllers;
-- padronizar respostas de erro para validação, regras de negócio e banco;
-- concluir autenticação e autorização com Spring Security e JWT;
-- documentar os endpoints com OpenAPI/Swagger;
-- ampliar os CRUDs para as demais entidades do domínio;
-- adicionar testes unitários, de integração e de controller;
-- integrar procedures e functions desenvolvidas no PostgreSQL;
-- preparar configuração segura para implantação em nuvem.
-
-## Testes
-
-Execute a suíte automatizada com:
-
-No Windows:
-
-```powershell
-.\mvnw.cmd test
-```
-
-No Linux ou macOS:
-
-```bash
-./mvnw test
-```
+- Confirmar o schema de origem no Neon e ajustar `NEON_SCHEMA`;
+- executar o `raw_ingest` e conferir as tabelas geradas;
+- mapear quais colunas do banco alimentam cada IS e implementar o cálculo na camada `curated`;
+- criar o Job com as três etapas em sequência;
+- construir o dashboard a partir da base `curated`;
+- adicionar o Row Filter por filial quando os dashboards estiverem finalizados;
+- deixar o React pronto para receber o embed e ativar o trial de 14 dias do Databricks de 4 a 5 dias antes da apresentação;
+- escrever o relatório gerencial com o fluxo do pipeline e a relação com os KPIs.
 
 ## Contribuição
 
-1. Crie uma branch a partir de `main`: `git switch -c feat/minha-feature`;
-2. faça commits seguindo o padrão
+Regras para todo o grupo:
+
+1. **Nunca edite na `main`.** Cada pessoa trabalha em uma branch própria;
+2. antes de começar, faça **Pull** da `main` e crie a sua branch: `feat/<seu-nome>-<assunto>`;
+3. avise o grupo qual notebook você vai editar, para evitar conflito de merge;
+4. faça commits curtos e claros, seguindo o padrão
    [Conventional Commits](https://www.conventionalcommits.org/pt-br/v1.0.0/);
-3. envie a branch para o GitHub;
-4. abra um Pull Request descrevendo a alteração e como validá-la.
+5. envie a branch (**Push**) e abra um **Pull Request** descrevendo a alteração;
+6. outra pessoa do grupo revisa e faz o merge na `main`.
 
-## Licença
+Fluxo do dia a dia:
 
-Distribuído sob a licença MIT. Consulte o arquivo [LICENSE](LICENSE) para mais
-informações.
+1. Abra a sua Git folder e faça **Pull**;
+2. confirme que está na sua branch;
+3. edite apenas o notebook combinado e rode para testar;
+4. faça **Commit & Push** e abra o Pull Request.
+
+Os notebooks são versionados em formato `.py`, o que mantém o diff legível no GitHub.
 
 ---
 
