@@ -3,13 +3,19 @@ package org.apollo.api.service;
 import lombok.RequiredArgsConstructor;
 import org.apollo.api.dto.AddressDTO;
 import org.apollo.api.dto.CompanyUnitDTO;
+import org.apollo.api.enums.InverterStatusEnum;
+import org.apollo.api.enums.MaintenanceStatusEnum;
 import org.apollo.api.exception.ResourceNotFoundException;
 import org.apollo.api.model.Address;
 import org.apollo.api.model.CompanyUnit;
 import org.apollo.api.model.Employee;
+import org.apollo.api.model.MaintenanceRegister;
 import org.apollo.api.repository.CompanyUnitRepository;
 import org.apollo.api.repository.EmployeeRepository;
+import org.apollo.api.repository.InverterRepository;
+import org.apollo.api.repository.MaintenanceRegisterRepository;
 import org.apollo.api.security.TenantContext;
+import org.apollo.api.util.Scope;
 import org.apollo.api.util.Specs;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -27,6 +33,8 @@ public class CompanyUnitService {
 
     private final CompanyUnitRepository companyUnitRepository;
     private final EmployeeRepository employeeRepository;
+    private final InverterRepository inverterRepository;
+    private final MaintenanceRegisterRepository maintenanceRegisterRepository;
     private final TenantContext tenantContext;
 
     @Transactional(readOnly = true)
@@ -45,7 +53,18 @@ public class CompanyUnitService {
 
     @Transactional(readOnly = true)
     public CompanyUnitDTO findById(UUID id) {
-        return toDTO(findUnit(id));
+        CompanyUnit unit = findUnit(id);
+        CompanyUnitDTO dto = toDTO(unit);
+        dto.setActiveInvertersCount(inverterRepository.countByCompanyUnitIdAndStatus(id, InverterStatusEnum.ATIVO));
+        dto.setOpenServiceOrdersCount(maintenanceRegisterRepository.count(openOrdersInUnit(id)));
+        return dto;
+    }
+
+    // OS ABERTA ou EM_ANDAMENTO cujo alerta pertence a esta filial.
+    private Specification<MaintenanceRegister> openOrdersInUnit(UUID unitId) {
+        return (root, query, cb) -> cb.and(
+                Scope.warningInUnit(cb, root.join("warning"), unitId),
+                root.get("maintenanceStatus").in(MaintenanceStatusEnum.ABERTA, MaintenanceStatusEnum.EM_ANDAMENTO));
     }
 
     @Transactional(readOnly = true)
