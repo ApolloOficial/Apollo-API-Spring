@@ -45,6 +45,28 @@ public class SuggestedInternalRelocationController {
                 PageParams.of(page, size, direction, sortBy.name()));
     }
 
+    @GetMapping("/incoming")
+    @Operation(summary = "Relocations suggested to the authenticated user's unit (optional status filter)")
+    public Page<SuggestedInternalRelocationDTO> incoming(
+            @RequestParam(required = false) RelocationStatusEnum status,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "suggestedAt") SortField sortBy,
+            @RequestParam(defaultValue = "DESC") Sort.Direction direction) {
+        return service.findIncoming(status, PageParams.of(page, size, direction, sortBy.name()));
+    }
+
+    @GetMapping("/mine")
+    @Operation(summary = "Relocations suggested by the authenticated user (optional status filter)")
+    public Page<SuggestedInternalRelocationDTO> mine(
+            @RequestParam(required = false) RelocationStatusEnum status,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "suggestedAt") SortField sortBy,
+            @RequestParam(defaultValue = "DESC") Sort.Direction direction) {
+        return service.findMine(status, PageParams.of(page, size, direction, sortBy.name()));
+    }
+
     @GetMapping("/{id}")
     @Operation(summary = "Find internal relocation by ID")
     public SuggestedInternalRelocationDTO findById(@PathVariable Long id) {
@@ -61,6 +83,12 @@ public class SuggestedInternalRelocationController {
     @PatchMapping("/{id}/review")
     @Operation(summary = "Manager approves or rejects (status APROVADA/REJEITADA)")
     public SuggestedInternalRelocationDTO review(@PathVariable Long id, @Valid @RequestBody RelocationReviewDTO dto) {
+        return service.review(id, dto.status());
+    }
+
+    @PatchMapping("/{id}/decision")
+    @Operation(summary = "Manager decision (same as /review): status APROVADA/REJEITADA, reviewer = authenticated user")
+    public SuggestedInternalRelocationDTO decision(@PathVariable Long id, @Valid @RequestBody RelocationReviewDTO dto) {
         return service.review(id, dto.status());
     }
 
