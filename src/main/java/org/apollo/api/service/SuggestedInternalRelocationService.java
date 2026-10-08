@@ -52,6 +52,27 @@ public class SuggestedInternalRelocationService {
         return relocationRepository.findAll(spec, pageable).map(this::toDTO);
     }
 
+    /** Sugestoes de outras filiais cujo destino e a filial do usuario logado (aba "Recebidas"). */
+    @Transactional(readOnly = true)
+    public Page<SuggestedInternalRelocationDTO> findIncoming(RelocationStatusEnum status, Pageable pageable) {
+        UUID unitId = tenantContext.getCompanyUnitId();
+        if (unitId == null) {
+            throw new BusinessRuleException("The authenticated user is not linked to a unit");
+        }
+        return findAll(status, null, unitId, pageable);
+    }
+
+    /** Sugestoes feitas pelo proprio usuario logado (aba "Minhas"). */
+    @Transactional(readOnly = true)
+    public Page<SuggestedInternalRelocationDTO> findMine(RelocationStatusEnum status, Pageable pageable) {
+        Specification<SuggestedInternalRelocation> spec = Specification
+                .where(Specs.<SuggestedInternalRelocation>equalTo(
+                        r -> r.get("panelString").get("inverter").get("companyUnit").get("company").get("id"), companyId()))
+                .and(Specs.<SuggestedInternalRelocation>equalTo(r -> r.get("requestedBy").get("id"), tenantContext.getUserId()))
+                .and(Specs.<SuggestedInternalRelocation>equalTo(r -> r.get("status"), status));
+        return relocationRepository.findAll(spec, pageable).map(this::toDTO);
+    }
+
     @Transactional(readOnly = true)
     public SuggestedInternalRelocationDTO findById(Long id) {
         return toDTO(findRelocation(id));
