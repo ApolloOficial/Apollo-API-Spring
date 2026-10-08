@@ -5,69 +5,29 @@ import org.apollo.api.dto.SegmentDTO;
 import org.apollo.api.exception.ResourceNotFoundException;
 import org.apollo.api.model.Segment;
 import org.apollo.api.repository.SegmentRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import java.util.List;
+import org.springframework.transaction.annotation.Transactional;
 
+// Segmentos de mercado: cadastrados no 1o ano, so leitura aqui.
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class SegmentService {
 
     private final SegmentRepository segmentRepository;
 
-    public List<SegmentDTO> findAll() {
-        return segmentRepository.findAll().stream()
-                .map(this::toDTO)
-                .toList();
+    public Page<SegmentDTO> findAll(Pageable pageable) {
+        return segmentRepository.findAll(pageable).map(this::toDTO);
     }
 
     public SegmentDTO findById(Long id) {
-        Segment segment = segmentRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Segmento não encontrado: " + id));
-        return toDTO(segment);
-    }
-
-    public SegmentDTO create(SegmentDTO dto) {
-        if (segmentRepository.findByName(dto.getName()).isPresent()) {
-            throw new IllegalArgumentException("Segmento com este nome já existe: " + dto.getName());
-        }
-        Segment segment = toEntity(dto);
-        return toDTO(segmentRepository.save(segment));
-    }
-
-    public SegmentDTO update(Long id, SegmentDTO dto) {
-        Segment segment = segmentRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Segmento não encontrado: " + id));
-
-        if (!segment.getName().equals(dto.getName()) && segmentRepository.findByName(dto.getName()).isPresent()) {
-            throw new IllegalArgumentException("Segmento com este nome já existe: " + dto.getName());
-        }
-
-        segment.setName(dto.getName());
-        segment.setDescription(dto.getDescription());
-
-        return toDTO(segmentRepository.save(segment));
-    }
-
-    public void delete(Long id) {
-        if (!segmentRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Segmento não encontrado: " + id);
-        }
-        segmentRepository.deleteById(id);
+        return toDTO(segmentRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Segment not found: " + id)));
     }
 
     private SegmentDTO toDTO(Segment segment) {
-        return new SegmentDTO(
-                segment.getId(),
-                segment.getName(),
-                segment.getDescription()
-        );
-    }
-
-    private Segment toEntity(SegmentDTO dto) {
-        return new Segment(
-                null,
-                dto.getName(),
-                dto.getDescription()
-        );
+        return new SegmentDTO(segment.getId(), segment.getName(), segment.getDescription());
     }
 }

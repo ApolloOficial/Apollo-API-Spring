@@ -16,21 +16,21 @@ import java.util.UUID;
 @AllArgsConstructor
 public class EmployeeUpdateDTO {
 
-    @NotBlank(message = "Nome é obrigatório")
-    @Size(max = 120, message = "Nome deve ter no máximo 120 caracteres")
+    @NotBlank(message = "Name is required")
+    @Size(max = 120, message = "Name must be at most 120 characters")
     private String fullName;
 
-    @NotBlank(message = "Email é obrigatório")
-    @Email(message = "Email inválido")
-    @Size(max = 120, message = "Email deve ter no máximo 120 caracteres")
+    @NotBlank(message = "Email is required")
+    @Email(message = "Invalid email")
+    @Size(max = 120, message = "Email must be at most 120 characters")
     private String email;
 
-    @NotNull(message = "Cargo (role) é obrigatório")
-    @Positive(message = "Cargo deve ser válido")
+    @NotNull(message = "Role is required")
+    @Positive(message = "Role must be valid")
     private Long roleId;
 
     private UUID companyUnitId;
 
-    @NotNull(message = "Status é obrigatório")
+    @NotNull(message = "Status is required")
     private Boolean active;
 }

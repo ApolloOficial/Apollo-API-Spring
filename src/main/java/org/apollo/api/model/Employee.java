@@ -1,18 +1,18 @@
 package org.apollo.api.model;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
 @Table(name = "employee")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
-@AllArgsConstructor
 public class Employee {
 
     @Id
@@ -32,16 +32,22 @@ public class Employee {
     @JoinColumn(name = "role_id", nullable = false)
     private Roles role;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "company_unit_id")
-    private CompanyUnit companyUnit;
+    @Column(name = "company_unit_id", nullable = false)
+    private UUID companyUnitId;
 
     @Column(name = "is_active", nullable = false)
     private boolean active = true;
 
+    @Column(name = "is_first_access", nullable = false)
+    private Boolean isFirstAccess = true;
+
     @Column(name = "fcm_token", length = 300)
     private String fcmToken;
 
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt = LocalDateTime.now();
+    // Quem cadastrou (gerente da filial). O banco precisa disso para analista, operador e tecnico.
+    @Column(name = "created_by")
+    private UUID createdBy;
+
+    @Column(name = "created_at", nullable = false)
+    private LocalDateTime createdAt;
 }

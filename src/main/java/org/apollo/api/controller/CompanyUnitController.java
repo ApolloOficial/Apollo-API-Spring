@@ -13,6 +13,12 @@ import lombok.RequiredArgsConstructor;
 import org.apollo.api.exception.ErrorResponse;
 import org.apollo.api.dto.CompanyUnitDTO;
 import org.apollo.api.service.CompanyUnitService;
+import org.apollo.api.util.PageParams;
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -28,11 +34,24 @@ public class CompanyUnitController {
 
     private final CompanyUnitService companyUnitService;
 
+    /** Campos permitidos para ordenar a listagem. */
+    public enum SortField { name, createdAt, kwpTotal }
+
     @GetMapping
     @Operation(summary = "List company units")
     @ApiResponse(responseCode = "200", description = "Company units returned successfully")
-    public List<CompanyUnitDTO> findAll() {
-        return companyUnitService.findAll();
+    public Page<CompanyUnitDTO> findAll(
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) String city,
+            @RequestParam(required = false) String state,
+            @RequestParam(required = false) Boolean active,
+            @RequestParam(required = false) Long segmentId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "name") SortField sortBy,
+            @RequestParam(defaultValue = "ASC") Sort.Direction direction) {
+        return companyUnitService.findAll(name, city, state, active, segmentId,
+                PageParams.of(page, size, direction, sortBy.name()));
     }
 
     @GetMapping("/{id}")
@@ -41,7 +60,7 @@ public class CompanyUnitController {
             @ApiResponse(responseCode = "200", description = "Company unit returned successfully"),
             @ApiResponse(responseCode = "404", description = "Company unit not found",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class),
-                            examples = @ExampleObject(value = "{\"status\": 404, \"message\": \"Unidade não encontrada: 1\"}")))
+                            examples = @ExampleObject(value = "{\"status\": 404, \"message\": \"Unit not found: 1\"}")))
     })
     public CompanyUnitDTO findById(@PathVariable UUID id) {
         return companyUnitService.findById(id);
@@ -54,47 +73,18 @@ public class CompanyUnitController {
         return companyUnitService.findBySegmentId(segmentId);
     }
 
-    @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    @Operation(summary = "Create company unit")
-    @ApiResponses({
-            @ApiResponse(responseCode = "201", description = "Company unit created successfully"),
-            @ApiResponse(responseCode = "400", description = "Invalid company unit data",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class),
-                            examples = @ExampleObject(value = "{\"status\": 400, \"message\": \"name: Nome é obrigatório\"}"))),
-            @ApiResponse(responseCode = "404", description = "Segment not found",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class),
-                            examples = @ExampleObject(value = "{\"status\": 404, \"message\": \"Segmento não encontrado: 1\"}")))
-    })
-    public CompanyUnitDTO create(@Valid @RequestBody CompanyUnitDTO dto) {
-        return companyUnitService.create(dto);
-    }
-
     @PutMapping("/{id}")
-    @Operation(summary = "Update company unit")
+    @Operation(summary = "Update contact data, address and responsible of a company unit")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Company unit updated successfully"),
             @ApiResponse(responseCode = "400", description = "Invalid company unit data",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class),
-                            examples = @ExampleObject(value = "{\"status\": 400, \"message\": \"name: Nome é obrigatório\"}"))),
+                            examples = @ExampleObject(value = "{\"status\": 400, \"message\": \"name: Name is required\"}"))),
             @ApiResponse(responseCode = "404", description = "Company unit or segment not found",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class),
-                            examples = @ExampleObject(value = "{\"status\": 404, \"message\": \"Unidade não encontrada: 1\"}")))
+                            examples = @ExampleObject(value = "{\"status\": 404, \"message\": \"Unit not found: 1\"}")))
     })
     public CompanyUnitDTO update(@PathVariable UUID id, @Valid @RequestBody CompanyUnitDTO dto) {
         return companyUnitService.update(id, dto);
-    }
-
-    @DeleteMapping("/{id}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    @Operation(summary = "Delete company unit")
-    @ApiResponses({
-            @ApiResponse(responseCode = "204", description = "Company unit deleted successfully"),
-            @ApiResponse(responseCode = "404", description = "Company unit not found",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class),
-                            examples = @ExampleObject(value = "{\"status\": 404, \"message\": \"Unidade não encontrada: 1\"}")))
-    })
-    public void delete(@PathVariable UUID id) {
-        companyUnitService.delete(id);
     }
 }

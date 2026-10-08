@@ -1,92 +1,122 @@
 package org.apollo.api.service;
 
 import lombok.RequiredArgsConstructor;
+import org.apollo.api.dto.StockCreateDTO;
 import org.apollo.api.dto.StockDTO;
+import org.apollo.api.dto.StockUpdateDTO;
 import org.apollo.api.exception.BusinessRuleException;
 import org.apollo.api.exception.ResourceNotFoundException;
 import org.apollo.api.model.CompanyUnit;
+import org.apollo.api.model.Part;
 import org.apollo.api.model.Stock;
+import org.apollo.api.model.StockId;
 import org.apollo.api.repository.CompanyUnitRepository;
+import org.apollo.api.repository.PartRepository;
 import org.apollo.api.repository.StockRepository;
 import org.apollo.api.security.TenantContext;
+import org.apollo.api.util.DbProcedures;
+import org.apollo.api.util.Specs;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
-import java.util.List;
 import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class StockService {
 
     private final StockRepository stockRepository;
     private final CompanyUnitRepository companyUnitRepository;
+    private final PartRepository partRepository;
     private final TenantContext tenantContext;
 
-    public List<StockDTO> findAll() {
-        return stockRepository.findAllByCompanyUnitCompanyId(companyId()).stream().map(this::toDTO).toList();
+    @Transactional(readOnly = true)
+    public Page<StockDTO> findAll(UUID companyUnitId, String search, Boolean belowMinimum, Pageable pageable) {
+        Specification<Stock> spec = Specification
+                .where(Specs.<Stock>equalTo(s -> s.get("companyUnit").get("company").get("id"), companyId()))
+                .and(Specs.<Stock>equalTo(s -> s.get("companyUnit").get("id"), companyUnitId))
+                .and(matchesPart(search))
+                .and(Boolean.TRUE.equals(belowMinimum) ? belowMinimum() : null);
+        return stockRepository.findAll(spec, pageable).map(this::toDTO);
     }
 
-    public StockDTO findById(Long id) {
-        return toDTO(findStock(id));
+    @Transactional(readOnly = true)
+    public StockDTO findById(UUID companyUnitId, Long partId) {
+        return toDTO(findStock(companyUnitId, partId));
     }
 
-    public StockDTO create(StockDTO dto) {
-        CompanyUnit unit = findUnit(dto.getCompanyUnitId());
-        if (stockRepository.existsByCompanyUnitIdAndSku(unit.getId(), dto.getSku())) {
-            throw new BusinessRuleException("Já existe item com este SKU nesta unidade");
+    /** Cadastra uma peca no estoque da filial (a propria filial do usuario, se nao informar outra). */
+    public StockDTO create(StockCreateDTO dto) {
+        UUID unitId = dto.companyUnitId() != null ? dto.companyUnitId() : tenantContext.getCompanyUnitId();
+        CompanyUnit unit = companyUnitRepository.findByIdAndCompanyId(unitId, companyId())
+                .orElseThrow(() -> new ResourceNotFoundException("Unit not found: " + unitId));
+        Part part = partRepository.findById(dto.partId())
+                .orElseThrow(() -> new ResourceNotFoundException("Part not found: " + dto.partId()));
+        StockId id = new StockId(unit.getId(), part.getId());
+        if (stockRepository.existsById(id)) {
+            throw new BusinessRuleException("This part is already in the stock of the unit; update it instead");
         }
         Stock stock = new Stock();
+        stock.setId(id);
         stock.setCompanyUnit(unit);
-        updateFields(stock, dto);
-        return toDTO(stockRepository.save(stock));
+        stock.setPart(part);
+        stock.setAvailableQtt(dto.availableQtt());
+        stock.setMinimumQtt(dto.minimumQtt());
+        stock.setUnitCost(dto.unitCost());
+        stock.setUpdatedAt(DbProcedures.now());
+        return toDTO(stockRepository.saveAndFlush(stock));
     }
 
-    public StockDTO update(Long id, StockDTO dto) {
-        Stock stock = findStock(id);
-        updateFields(stock, dto);
-        stock.setUpdatedAt(LocalDateTime.now());
-        return toDTO(stockRepository.save(stock));
+    public StockDTO update(UUID companyUnitId, Long partId, StockUpdateDTO dto) {
+        Stock stock = findStock(companyUnitId, partId);
+        stock.setAvailableQtt(dto.availableQtt());
+        stock.setMinimumQtt(dto.minimumQtt());
+        stock.setUnitCost(dto.unitCost());
+        stock.setUpdatedAt(DbProcedures.now());
+        return toDTO(stockRepository.saveAndFlush(stock));
     }
 
-    public void delete(Long id) {
-        stockRepository.delete(findStock(id));
+    public void delete(UUID companyUnitId, Long partId) {
+        stockRepository.delete(findStock(companyUnitId, partId));
+        stockRepository.flush();
     }
 
-    private Stock findStock(Long id) {
-        return stockRepository.findByIdAndCompanyUnitCompanyId(id, companyId())
-                .orElseThrow(() -> new ResourceNotFoundException("Item de estoque não encontrado: " + id));
+    private Stock findStock(UUID companyUnitId, Long partId) {
+        Stock stock = stockRepository.findById(new StockId(companyUnitId, partId))
+                .orElseThrow(() -> new ResourceNotFoundException("Stock item not found: " + partId));
+        if (!stock.getCompanyUnit().getCompany().getId().equals(companyId())) {
+            // Outra empresa: responde 404 para nao confirmar que existe.
+            throw new ResourceNotFoundException("Stock item not found: " + partId);
+        }
+        return stock;
     }
 
-    private CompanyUnit findUnit(UUID id) {
-        return companyUnitRepository.findByIdAndCompanyId(id, companyId())
-                .orElseThrow(() -> new ResourceNotFoundException("Unidade não encontrada: " + id));
+    private Specification<Stock> matchesPart(String search) {
+        if (search == null || search.isBlank()) {
+            return null;
+        }
+        String pattern = "%" + search.trim().toLowerCase() + "%";
+        return (root, query, cb) -> cb.or(
+                cb.like(cb.lower(root.get("part").get("name")), pattern),
+                cb.like(cb.lower(root.get("part").get("sku")), pattern));
+    }
+
+    private Specification<Stock> belowMinimum() {
+        return (root, query, cb) -> cb.lessThan(root.<Integer>get("availableQtt"), root.<Integer>get("minimumQtt"));
     }
 
     private Long companyId() {
         return tenantContext.getCompanyId();
     }
 
-    private void updateFields(Stock stock, StockDTO dto) {
-        stock.setSku(dto.getSku());
-        stock.setPartName(dto.getPartName());
-        stock.setPartManufacturer(dto.getPartManufacturer());
-        stock.setAvailableQtt(dto.getAvailableQtt());
-        stock.setMinimumQtt(dto.getMinimumQtt());
-        stock.setUnitCost(dto.getUnitCost());
-    }
-
-    private StockDTO toDTO(Stock stock) {
-        return new StockDTO(
-                stock.getId(),
-                stock.getCompanyUnit().getId(),
-                stock.getSku(),
-                stock.getPartName(),
-                stock.getPartManufacturer(),
-                stock.getAvailableQtt(),
-                stock.getMinimumQtt(),
-                stock.getUnitCost(),
-                stock.getUpdatedAt()
-        );
+    private StockDTO toDTO(Stock s) {
+        return new StockDTO(s.getCompanyUnit().getId(), s.getCompanyUnit().getName(), s.getPart().getId(),
+                s.getPart().getSku(), s.getPart().getName(), s.getPart().getManufacturer(),
+                s.getAvailableQtt(), s.getMinimumQtt(), s.getUnitCost(), s.getUpdatedAt(),
+                s.getAvailableQtt() < s.getMinimumQtt());
     }
 }

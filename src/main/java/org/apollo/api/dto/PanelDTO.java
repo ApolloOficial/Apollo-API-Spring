@@ -1,41 +1,22 @@
 package org.apollo.api.dto;
 
-import jakarta.validation.constraints.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 import org.apollo.api.enums.OperatingStatsEnum;
+import org.apollo.api.model.PanelOverview;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-public class PanelDTO {
+public record PanelDTO(Long id, UUID stringId, String stringCode, String inverterCode, UUID companyUnitId,
+                       String serialNumber, String barcode, String manufacturer, String model,
+                       OperatingStatsEnum operatingStats, LocalDate installationDt, LocalDateTime activatedAt,
+                       BigDecimal stringHealthScore, Long activeWarnings) {
 
-    private Long id;
-
-    @NotNull(message = "Lote é obrigatório")
-    private UUID batchId;
-
-    @NotNull(message = "Ciclo de vida estimado é obrigatório")
-    @Min(1) @Max(50)
-    private Integer estimatedLifeCycle;
-
-    @NotBlank @Size(max = 100)
-    private String serialNumber;
-
-    @NotBlank @Size(max = 100)
-    private String barcode;
-
-    @NotNull(message = "Status operacional é obrigatório")
-    private OperatingStatsEnum operatingStats;
-
-    @NotNull
-    @DecimalMin("0.00") @DecimalMax("100.00")
-    private BigDecimal ratedEfficiency;
-
-    private LocalDate installationDt;
+    public static PanelDTO of(PanelOverview p) {
+        return new PanelDTO(p.getPanelId(), p.getStringId(), p.getStringCode(), p.getInverterCode(),
+                p.getCompanyUnitId(), p.getSerialNumber(), p.getBarcode(), p.getManufacturer(), p.getModel(),
+                p.getOperatingStats(), p.getInstallationDt(), p.getActivatedAt(), p.getStringHealthScore(),
+                p.getActivePanelWarnings());
+    }
 }

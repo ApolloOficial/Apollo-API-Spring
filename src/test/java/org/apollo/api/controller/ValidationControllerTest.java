@@ -1,7 +1,7 @@
 package org.apollo.api.controller;
 
 import org.apollo.api.exception.GlobalExceptionHandler;
-import org.apollo.api.service.BatchService;
+import org.apollo.api.service.InverterService;
 import org.apollo.api.service.PanelService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -16,16 +16,16 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 class ValidationControllerTest {
 
-    private BatchService batchService;
+    private InverterService inverterService;
     private PanelService panelService;
     private MockMvc mockMvc;
 
     @BeforeEach
     void setUp() {
-        batchService = mock(BatchService.class);
+        inverterService = mock(InverterService.class);
         panelService = mock(PanelService.class);
         mockMvc = MockMvcBuilders.standaloneSetup(
-                        new BatchController(batchService),
+                        new InverterController(inverterService),
                         new PanelController(panelService)
                 )
                 .setControllerAdvice(new GlobalExceptionHandler())
@@ -33,18 +33,18 @@ class ValidationControllerTest {
     }
 
     @Test
-    void shouldRejectInvalidBatchBeforeCallingService() throws Exception {
-        mockMvc.perform(post("/api/v1/batches")
+    void shouldRejectInvalidInverterBeforeCallingService() throws Exception {
+        mockMvc.perform(post("/api/v1/inverters")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
                 .andExpect(status().isBadRequest());
 
-        verifyNoInteractions(batchService);
+        verifyNoInteractions(inverterService);
     }
 
     @Test
-    void shouldRejectInvalidPanelBeforeCallingService() throws Exception {
-        mockMvc.perform(post("/api/v1/panels")
+    void shouldRejectInvalidPanelActivationBeforeCallingService() throws Exception {
+        mockMvc.perform(post("/api/v1/panels/activate")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
                 .andExpect(status().isBadRequest());
@@ -52,4 +52,3 @@ class ValidationControllerTest {
         verifyNoInteractions(panelService);
     }
 }
-

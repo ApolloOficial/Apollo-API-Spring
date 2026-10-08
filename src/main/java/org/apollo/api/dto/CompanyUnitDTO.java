@@ -24,40 +24,44 @@ public class CompanyUnitDTO {
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private Long companyId;
 
-    @NotNull(message = "Segmento é obrigatório")
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private Long segmentId;
 
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private String segmentName;
 
-    @NotNull(message = "Endereço é obrigatório")
+    @NotNull(message = "Address is required")
     @Valid
     private AddressDTO address;
 
-    @NotBlank(message = "Nome é obrigatório")
+    @NotBlank(message = "Name is required")
     private String name;
 
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private LocalDate createdAt;
 
-    @NotBlank(message = "Email é obrigatório")
-    @Email(message = "Email inválido")
+    @NotBlank(message = "Email is required")
+    @Email(message = "Invalid email")
     private String email;
 
-    @NotBlank(message = "Telefone é obrigatório")
-    @Pattern(regexp = "^[0-9]{10,11}$", message = "Telefone deve conter 10 ou 11 dígitos")
+    @NotBlank(message = "Phone is required")
+    @Pattern(regexp = "^[0-9]{10,11}$", message = "Phone must contain 10 or 11 digits")
     private String phone;
 
-    @Pattern(regexp = "^[0-9]{14,18}$", message = "CNPJ inválido")
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private String cnpj;
 
     private UUID responsibleEmployeeId;
 
-    @Email(message = "Email de contato inválido")
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    private String responsibleEmployeeName;
+
+    @Email(message = "Invalid contact email")
     private String contactEmail;
 
     private String contactPhone;
 
-    @DecimalMin(value = "0.0", message = "kWp total não pode ser negativo")
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private BigDecimal kwpTotal;
 
     private Boolean active = true;

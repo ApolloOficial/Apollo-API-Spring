@@ -1,89 +1,39 @@
 package org.apollo.api.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.ExampleObject;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.apollo.api.exception.ErrorResponse;
 import org.apollo.api.dto.SegmentDTO;
 import org.apollo.api.service.SegmentService;
-import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
+import org.apollo.api.util.PageParams;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Sort;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/v1/segments")
 @RequiredArgsConstructor
-@Tag(name = "Segment", description = "Segment management operations")
+@Tag(name = "Segment", description = "Segmentos de mercado - somente leitura")
 @SecurityRequirement(name = "bearer-key")
 public class SegmentController {
 
     private final SegmentService segmentService;
 
     @GetMapping
-    @Operation(summary = "List segments")
-    @ApiResponse(responseCode = "200", description = "Segments returned successfully")
-    public List<SegmentDTO> findAll() {
-        return segmentService.findAll();
+    @Operation(summary = "List segments (paginated)")
+    public Page<SegmentDTO> findAll(@RequestParam(defaultValue = "0") int page,
+                                    @RequestParam(defaultValue = "20") int size) {
+        return segmentService.findAll(PageParams.of(page, size, Sort.Direction.ASC, "id"));
     }
 
     @GetMapping("/{id}")
     @Operation(summary = "Find segment by ID")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Segment returned successfully"),
-            @ApiResponse(responseCode = "404", description = "Segment not found",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class),
-                            examples = @ExampleObject(value = "{\"status\": 404, \"message\": \"Segmento não encontrado: 1\"}")))
-    })
     public SegmentDTO findById(@PathVariable Long id) {
         return segmentService.findById(id);
-    }
-
-    @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    @Operation(summary = "Create segment")
-    @ApiResponses({
-            @ApiResponse(responseCode = "201", description = "Segment created successfully"),
-            @ApiResponse(responseCode = "400", description = "Invalid segment data",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class),
-                            examples = @ExampleObject(value = "{\"status\": 400, \"message\": \"name: Nome é obrigatório\"}")))
-    })
-    public SegmentDTO create(@Valid @RequestBody SegmentDTO dto) {
-        return segmentService.create(dto);
-    }
-
-    @PutMapping("/{id}")
-    @Operation(summary = "Update segment")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Segment updated successfully"),
-            @ApiResponse(responseCode = "400", description = "Invalid segment data",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class),
-                            examples = @ExampleObject(value = "{\"status\": 400, \"message\": \"name: Nome é obrigatório\"}"))),
-            @ApiResponse(responseCode = "404", description = "Segment not found",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class),
-                            examples = @ExampleObject(value = "{\"status\": 404, \"message\": \"Segmento não encontrado: 1\"}")))
-    })
-    public SegmentDTO update(@PathVariable Long id, @Valid @RequestBody SegmentDTO dto) {
-        return segmentService.update(id, dto);
-    }
-
-    @DeleteMapping("/{id}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    @Operation(summary = "Delete segment")
-    @ApiResponses({
-            @ApiResponse(responseCode = "204", description = "Segment deleted successfully"),
-            @ApiResponse(responseCode = "404", description = "Segment not found",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class),
-                            examples = @ExampleObject(value = "{\"status\": 404, \"message\": \"Segmento não encontrado: 1\"}")))
-    })
-    public void delete(@PathVariable Long id) {
-        segmentService.delete(id);
     }
 }

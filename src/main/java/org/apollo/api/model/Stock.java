@@ -1,36 +1,33 @@
 package org.apollo.api.model;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+// Estoque de pecas por filial. A chave e (filial, peca).
 @Entity
 @Table(name = "stock")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
-@AllArgsConstructor
 public class Stock {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @EmbeddedId
+    private StockId id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "co_unity_id", nullable = false)
+    @MapsId("companyUnitId")
+    @JoinColumn(name = "company_unit_id", nullable = false)
     private CompanyUnit companyUnit;
 
-    @Column(name = "sku", nullable = false, length = 50)
-    private String sku;
-
-    @Column(name = "part_name", nullable = false, length = 100)
-    private String partName;
-
-    @Column(name = "part_manufacturer", nullable = false, length = 100)
-    private String partManufacturer;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @MapsId("partId")
+    @JoinColumn(name = "part_id", nullable = false)
+    private Part part;
 
     @Column(name = "available_qtt", nullable = false)
     private Integer availableQtt = 0;
