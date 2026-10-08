@@ -66,6 +66,13 @@ public class CompanyUnitDTO {
 
     private Boolean active = true;
 
+    // So preenchidos no detalhe (GET /company-units/{id}).
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    private Long activeInvertersCount;
+
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    private Long openServiceOrdersCount;
+
     public CompanyUnitDTO(UUID id, Long companyId, Long segmentId, String segmentName, AddressDTO address,
                           String name, LocalDate createdAt, String email, String phone,
                           String cnpj, UUID responsibleEmployeeId, String contactEmail,
