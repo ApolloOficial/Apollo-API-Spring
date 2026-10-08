@@ -1,6 +1,7 @@
 package org.apollo.api.repository;
 
 import org.apollo.api.dto.SearchResultDTO;
+import org.apollo.api.enums.InverterStatusEnum;
 import org.apollo.api.model.Inverter;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -20,6 +21,8 @@ public interface InverterRepository extends JpaRepository<Inverter, UUID>, JpaSp
     @Override
     @EntityGraph(attributePaths = {"companyUnit", "inverterModel"})
     Page<Inverter> findAll(Specification<Inverter> spec, Pageable pageable);
+
+    long countByCompanyUnitIdAndStatus(UUID companyUnitId, InverterStatusEnum status);
 
     @EntityGraph(attributePaths = {"companyUnit", "inverterModel"})
     Optional<Inverter> findByIdAndCompanyUnitCompanyId(UUID id, Long companyId);
