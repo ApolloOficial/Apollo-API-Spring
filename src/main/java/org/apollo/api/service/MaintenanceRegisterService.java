@@ -3,6 +3,7 @@ package org.apollo.api.service;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import org.apollo.api.dto.MaintenanceCancelDTO;
+import org.apollo.api.dto.MaintenanceChainDTO;
 import org.apollo.api.dto.MaintenanceCompleteDTO;
 import org.apollo.api.dto.MaintenanceCreateDTO;
 import org.apollo.api.dto.MaintenancePartCreateDTO;
@@ -79,6 +80,47 @@ public class MaintenanceRegisterService {
     @Transactional(readOnly = true)
     public MaintenanceRegisterDTO findById(Long id) {
         return toDTO(findRegister(id));
+    }
+
+    /**
+     * Cadeia completa da OS: sobe pelos pais ate a raiz e desce por todos os retrabalhos.
+     * A raiz tem chainLevel 1; path vai da raiz ate a OS. O escopo da empresa e checado na OS pedida.
+     */
+    @Transactional(readOnly = true)
+    public List<MaintenanceChainDTO> chain(Long id) {
+        MaintenanceRegister root = findRegister(id);
+        java.util.Set<Long> seen = new java.util.HashSet<>();
+        seen.add(root.getId());
+        while (root.getParentMaintenance() != null && seen.add(root.getParentMaintenance().getId())) {
+            root = maintenanceRegisterRepository.findById(root.getParentMaintenance().getId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Service order not found: " + id));
+        }
+
+        List<MaintenanceChainDTO> chain = new java.util.ArrayList<>();
+        Map<Long, List<Long>> paths = new HashMap<>();
+        paths.put(root.getId(), List.of(root.getId()));
+        chain.add(new MaintenanceChainDTO(root.getId(), null, root.getMaintenanceStatus(), root.getOpeningDt(),
+                1, paths.get(root.getId())));
+
+        List<Long> level = List.of(root.getId());
+        java.util.Set<Long> visited = new java.util.HashSet<>(level);
+        while (!level.isEmpty()) {
+            List<Long> next = new java.util.ArrayList<>();
+            for (MaintenanceRegister child : maintenanceRegisterRepository.findChildrenOf(level)) {
+                if (!visited.add(child.getId())) {
+                    continue;
+                }
+                Long parentId = child.getParentMaintenance().getId();
+                List<Long> path = new java.util.ArrayList<>(paths.get(parentId));
+                path.add(child.getId());
+                paths.put(child.getId(), path);
+                chain.add(new MaintenanceChainDTO(child.getId(), parentId, child.getMaintenanceStatus(),
+                        child.getOpeningDt(), path.size(), path));
+                next.add(child.getId());
+            }
+            level = next;
+        }
+        return chain;
     }
 
     /** O operador abre a OS a partir de um alerta ATIVO e escolhe o tecnico. */
