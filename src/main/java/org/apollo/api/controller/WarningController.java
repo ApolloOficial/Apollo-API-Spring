@@ -28,6 +28,7 @@ import java.util.UUID;
 public class WarningController {
 
     private final WarningService warningService;
+    private final MaintenanceRegisterService maintenanceRegisterService;
 
     public enum SortField { id, generationDt, severity, type, status }
 
@@ -52,5 +53,14 @@ public class WarningController {
     @Operation(summary = "Find warning by ID")
     public WarningDTO findById(@PathVariable Long id) {
         return warningService.findById(id);
+    }
+
+    @PostMapping("/{id}/service-order")
+    @ResponseStatus(HttpStatus.CREATED)
+    @Operation(summary = "Operator opens a service order from an active warning (pr_open_maintenance)")
+    public MaintenanceRegisterDTO openServiceOrder(@PathVariable Long id,
+                                                   @Valid @RequestBody ServiceOrderCreateDTO dto) {
+        return maintenanceRegisterService.create(new MaintenanceCreateDTO(
+                id, dto.technicianId(), dto.maintenanceTypeId(), dto.dueDate(), null, null));
     }
 }
