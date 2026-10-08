@@ -25,6 +25,11 @@ public interface MaintenanceRegisterRepository
     @EntityGraph(attributePaths = {"warning", "maintenanceType", "technician", "createdBy", "parentMaintenance"})
     Optional<MaintenanceRegister> findById(Long id);
 
+    // Filhas diretas (retrabalhos) das OS informadas, usadas para montar a cadeia em GET /{id}/chain.
+    @Query("SELECT m FROM MaintenanceRegister m WHERE m.parentMaintenance.id IN :parentIds "
+            + "ORDER BY m.openingDt ASC, m.id ASC")
+    List<MaintenanceRegister> findChildrenOf(@Param("parentIds") Collection<Long> parentIds);
+
     // [warningId, maintenanceId] dos alertas informados que ja tem OS
     @Query("SELECT m.warning.id, m.id FROM MaintenanceRegister m WHERE m.warning.id IN :warningIds")
     List<Object[]> findIdsByWarningIds(@Param("warningIds") Collection<Long> warningIds);
