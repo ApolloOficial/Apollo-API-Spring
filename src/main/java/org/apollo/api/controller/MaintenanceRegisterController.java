@@ -56,6 +56,12 @@ public class MaintenanceRegisterController {
         return service.findById(id);
     }
 
+    @GetMapping("/{id}/chain")
+    @Operation(summary = "Chain of related maintenance orders (root to rework), with chainLevel and path")
+    public List<MaintenanceChainDTO> chain(@PathVariable Long id) {
+        return service.chain(id);
+    }
+
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "Open a maintenance order from an active warning (pr_open_maintenance)")
