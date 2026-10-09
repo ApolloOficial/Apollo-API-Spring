@@ -90,6 +90,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/addresses/**").hasRole(MANAGER)
                         .requestMatchers(HttpMethod.GET, "/api/v1/employees/**").hasAnyRole(MANAGER, OPERATOR, ANALYST)
                         .requestMatchers("/api/v1/employees/**").hasRole(MANAGER)
+                        .requestMatchers("/api/v1/phone-change-requests/**").hasRole(MANAGER)
 
                         // ==========================================================================
                         //  4. OPERACAO (inversores, strings, placas, alertas, OS, estoque, realocacoes)
