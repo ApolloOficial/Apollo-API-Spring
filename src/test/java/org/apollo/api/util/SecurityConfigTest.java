@@ -131,6 +131,27 @@ class SecurityConfigTest {
     }
 
     @Test
+    void shouldAllowManagerToReviewPhoneChangeRequests() throws Exception {
+        authenticate("manager-token", "MANAGER");
+        mockMvc.perform(get("/api/v1/phone-change-requests").header(HttpHeaders.AUTHORIZATION, "Bearer manager-token"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void shouldRejectTechnicianReviewingPhoneChangeRequests() throws Exception {
+        authenticate("technician-token", "TECHNICIAN");
+        mockMvc.perform(patch("/api/v1/phone-change-requests/1/approve").header(HttpHeaders.AUTHORIZATION, "Bearer technician-token"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void shouldAllowTechnicianToReadOwnSettings() throws Exception {
+        authenticate("technician-token", "TECHNICIAN");
+        mockMvc.perform(get("/api/v1/settings").header(HttpHeaders.AUTHORIZATION, "Bearer technician-token"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
     void shouldRejectOperatorWritingEmployees() throws Exception {
         authenticate("operator-token", "OPERATOR");
         mockMvc.perform(post("/api/v1/employees").header(HttpHeaders.AUTHORIZATION, "Bearer operator-token"))

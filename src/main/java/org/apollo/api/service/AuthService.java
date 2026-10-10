@@ -35,6 +35,8 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final DbProcedures dbProcedures;
+    private final SettingsService settingsService;
+    private final DeviceSessionService deviceSessionService;
 
     public LoginResponseDTO login(LoginRequestDTO request) {
         String key = request.getEmail().trim().toLowerCase(Locale.ROOT);
@@ -51,6 +53,7 @@ public class AuthService {
         attempts.remove(key);
         registerAccess(request.getEmail(), "SUCESSO");
         AuthenticatedUser user = matchingUsers.getFirst();
+        registerDevice(user.getUserId());
         return new LoginResponseDTO(jwtService.generateToken(user), "Bearer", user.isFirstAccess());
     }
 
@@ -66,6 +69,21 @@ public class AuthService {
         employee.setPasswordHash(passwordEncoder.encode(dto.getNewPassword()));
         employee.setIsFirstAccess(false);
         employeeRepository.save(employee);
+        markPasswordChanged(employeeId);
+    }
+
+    private void registerDevice(UUID employeeId) {
+        try {
+            deviceSessionService.registerLogin(employeeId);
+        } catch (RuntimeException ignored) {
+        }
+    }
+
+    private void markPasswordChanged(UUID employeeId) {
+        try {
+            settingsService.markPasswordChanged(employeeId);
+        } catch (RuntimeException ignored) {
+        }
     }
 
     // Auditoria de acesso (tabela access_log). Nunca pode derrubar o login.
