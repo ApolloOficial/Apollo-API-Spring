@@ -100,7 +100,8 @@ class AuthServiceTest {
     @Test
     void shouldRegisterDeviceAfterSuccessfulLogin() {
         LoginRequestDTO request = new LoginRequestDTO("admin@apollo.com", "password");
-        when(authUserRepository.findActiveByEmail("admin@apollo.com")).thenReturn(List.of(authenticatedUser()));
+        AuthUser user = authenticatedUser();
+        when(authUserRepository.findActiveByEmail("admin@apollo.com")).thenReturn(List.of(user));
         when(passwordEncoder.matches("password", "encoded-password")).thenReturn(true);
         when(jwtService.generateToken(any())).thenReturn("generated-token");
 
