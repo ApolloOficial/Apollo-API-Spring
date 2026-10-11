@@ -132,6 +132,8 @@ public class SecurityConfig {
 
                         .requestMatchers("/api/v1/chat/**").hasAnyRole(MANAGER, OPERATOR, ANALYST, TECHNICIAN)
 
+                        .requestMatchers(HttpMethod.GET, "/api/v1/mobile/home").hasAnyRole(MANAGER, OPERATOR, ANALYST, TECHNICIAN)
+
                         // Busca global.
                         .requestMatchers(HttpMethod.GET, "/api/v1/search/**").hasAnyRole(MANAGER, OPERATOR, ANALYST)
 
