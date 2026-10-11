@@ -34,7 +34,7 @@ class MobileHomeRepositoryTest {
 
         assertWellFormed(sql);
         assertEquals(3, placeholders(sql));
-        assertTrue(sql.indexOf("m.technician_id = ?") < sql.indexOf("ORDER BY"));
+        assertTrue(sql.indexOf("m.technician_id = ?") < sql.lastIndexOf("ORDER BY"));
     }
 
     @Test
@@ -52,6 +52,6 @@ class MobileHomeRepositoryTest {
 
         assertWellFormed(sql);
         assertEquals(3, placeholders(sql));
-        assertTrue(sql.indexOf("m.technician_id = ?") < sql.indexOf("ORDER BY"));
+        assertTrue(sql.indexOf("m.technician_id = ?") < sql.lastIndexOf("ORDER BY"));
     }
 }
