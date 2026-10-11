@@ -24,9 +24,8 @@ public class MobileHomeRepository {
             LEFT JOIN inverter i ON i.id = s.inverter_id
             """;
 
-    private static final String SEVERITY_RANK = """
-            CASE w.severity WHEN 'CRITICA' THEN 0 WHEN 'ALTA' THEN 1 WHEN 'MEDIA' THEN 2 ELSE 3 END
-            """;
+    private static final String SEVERITY_RANK =
+            "CASE w.severity WHEN 'CRITICA' THEN 0 WHEN 'ALTA' THEN 1 WHEN 'MEDIA' THEN 2 ELSE 3 END";
 
     private final JdbcTemplate jdbc;
 
@@ -45,6 +44,35 @@ public class MobileHomeRepository {
     public record Page<T>(List<T> items, int total) {
     }
 
+    static String ordersSql(boolean byTechnician) {
+        return "SELECT m.id, m.maintenance_status, m.due_date, w.severity,\n"
+                + "       COALESCE(p.serial_number, s.code) AS asset_code, COUNT(*) OVER() AS total\n"
+                + SCOPE_JOINS
+                + "WHERE i.company_unit_id = ?\n"
+                + "  AND m.maintenance_status IN ('ABERTA', 'EM_ANDAMENTO')\n"
+                + (byTechnician ? "  AND m.technician_id = ?\n" : "")
+                + "ORDER BY " + SEVERITY_RANK + ", m.due_date NULLS LAST, m.id\n"
+                + "LIMIT ?";
+    }
+
+    static String attentionSql(boolean byTechnician) {
+        return "SELECT w.id, w.severity, w.message, h.health_score, m.id AS order_id, COUNT(*) OVER() AS total\n"
+                + "FROM warning w\n"
+                + "LEFT JOIN panel p ON p.id = w.panel_id\n"
+                + "LEFT JOIN string s ON s.id = COALESCE(w.string_id, p.string_id)\n"
+                + "LEFT JOIN inverter i ON i.id = s.inverter_id\n"
+                + "LEFT JOIN maintenance_register m ON m.warning_id = w.id\n"
+                + "LEFT JOIN LATERAL (\n"
+                + "    SELECT hh.health_score FROM string_health_history hh\n"
+                + "    WHERE hh.string_id = s.id ORDER BY hh.calculated_at DESC LIMIT 1\n"
+                + ") h ON TRUE\n"
+                + "WHERE i.company_unit_id = ?\n"
+                + "  AND w.status IN ('ATIVO', 'RECONHECIDO')\n"
+                + (byTechnician ? "  AND m.technician_id = ?\n" : "")
+                + "ORDER BY " + SEVERITY_RANK + ", w.generation_dt DESC\n"
+                + "LIMIT ?";
+    }
+
     public Optional<HeaderRow> findHeader(UUID employeeId) {
         List<HeaderRow> rows = jdbc.query("""
                 SELECT e.full_name, u.name AS unit_name, a.city, a.state,
@@ -61,24 +89,12 @@ public class MobileHomeRepository {
     public Page<OrderRow> findOpenOrders(UUID unitId, UUID technicianId, int limit) {
         List<Object> args = new ArrayList<>();
         args.add(unitId);
-        String technicianFilter = "";
         if (technicianId != null) {
-            technicianFilter = " AND m.technician_id = ?";
             args.add(technicianId);
         }
         args.add(limit);
         int[] total = {0};
-        List<OrderRow> rows = jdbc.query("""
-                SELECT m.id, m.maintenance_status, m.due_date, w.severity,
-                       COALESCE(p.serial_number, s.code) AS asset_code, COUNT(*) OVER() AS total
-                """ + SCOPE_JOINS + """
-                WHERE i.company_unit_id = ?
-                  AND m.maintenance_status IN ('ABERTA', 'EM_ANDAMENTO')
-                """ + technicianFilter + """
-                ORDER BY """ + SEVERITY_RANK + """
-                , m.due_date NULLS LAST, m.id
-                LIMIT ?
-                """, (rs, n) -> {
+        List<OrderRow> rows = jdbc.query(ordersSql(technicianId != null), (rs, n) -> {
             total[0] = rs.getInt("total");
             OffsetDateTime due = rs.getObject("due_date", OffsetDateTime.class);
             return new OrderRow(rs.getLong("id"), rs.getString("maintenance_status"),
@@ -91,31 +107,12 @@ public class MobileHomeRepository {
     public Page<AttentionRow> findAttention(UUID unitId, UUID technicianId, int limit) {
         List<Object> args = new ArrayList<>();
         args.add(unitId);
-        String technicianFilter = "";
         if (technicianId != null) {
-            technicianFilter = " AND m.technician_id = ?";
             args.add(technicianId);
         }
         args.add(limit);
         int[] total = {0};
-        List<AttentionRow> rows = jdbc.query("""
-                SELECT w.id, w.severity, w.message, h.health_score, m.id AS order_id, COUNT(*) OVER() AS total
-                FROM warning w
-                LEFT JOIN panel p ON p.id = w.panel_id
-                LEFT JOIN string s ON s.id = COALESCE(w.string_id, p.string_id)
-                LEFT JOIN inverter i ON i.id = s.inverter_id
-                LEFT JOIN maintenance_register m ON m.warning_id = w.id
-                LEFT JOIN LATERAL (
-                    SELECT hh.health_score FROM string_health_history hh
-                    WHERE hh.string_id = s.id ORDER BY hh.calculated_at DESC LIMIT 1
-                ) h ON TRUE
-                WHERE i.company_unit_id = ?
-                  AND w.status IN ('ATIVO', 'RECONHECIDO')
-                """ + technicianFilter + """
-                ORDER BY """ + SEVERITY_RANK + """
-                , w.generation_dt DESC
-                LIMIT ?
-                """, (rs, n) -> {
+        List<AttentionRow> rows = jdbc.query(attentionSql(technicianId != null), (rs, n) -> {
             total[0] = rs.getInt("total");
             double score = rs.getDouble("health_score");
             Double health = rs.wasNull() ? null : score;
