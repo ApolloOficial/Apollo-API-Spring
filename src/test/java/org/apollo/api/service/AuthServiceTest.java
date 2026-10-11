@@ -10,6 +10,7 @@ import org.apollo.api.repository.EmployeeRepository;
 import org.apollo.api.security.AuthUser;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -23,8 +24,12 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -108,6 +113,60 @@ class AuthServiceTest {
         authService.login(request);
 
         verify(deviceSessionService).registerLogin(UUID.fromString("00000000-0000-0000-0000-000000000001"));
+    }
+
+    @Test
+    void shouldRegisterSuccessfulAccessWithFreshSessionPerAttempt() {
+        LoginRequestDTO request = new LoginRequestDTO("admin@apollo.com", "password");
+        AuthUser user = authenticatedUser();
+        when(authUserRepository.findActiveByEmail("admin@apollo.com")).thenReturn(List.of(user));
+        when(passwordEncoder.matches("password", "encoded-password")).thenReturn(true);
+        when(jwtService.generateToken(any())).thenReturn("generated-token");
+
+        authService.login(request);
+        authService.login(request);
+
+        ArgumentCaptor<UUID> sessions = ArgumentCaptor.forClass(UUID.class);
+        verify(dbProcedures, times(2)).registerAccess(eq("admin@apollo.com"), sessions.capture(), any(), eq("SUCESSO"));
+        assertNotEquals(sessions.getAllValues().get(0), sessions.getAllValues().get(1));
+    }
+
+    @Test
+    void shouldRegisterFailedAccessForUnknownEmail() {
+        LoginRequestDTO request = new LoginRequestDTO("ghost@apollo.com", "password");
+        when(authUserRepository.findActiveByEmail("ghost@apollo.com")).thenReturn(List.of());
+
+        assertThrows(ResponseStatusException.class, () -> authService.login(request));
+
+        verify(dbProcedures).registerAccess(eq("ghost@apollo.com"), any(UUID.class), any(), eq("FALHA"));
+    }
+
+    @Test
+    void shouldRegisterFailedAccessForWrongPassword() {
+        LoginRequestDTO request = new LoginRequestDTO("admin@apollo.com", "wrong");
+        AuthUser user = mock(AuthUser.class);
+        when(user.getPasswordHash()).thenReturn("encoded-password");
+        when(authUserRepository.findActiveByEmail("admin@apollo.com")).thenReturn(List.of(user));
+        when(passwordEncoder.matches("wrong", "encoded-password")).thenReturn(false);
+
+        assertThrows(ResponseStatusException.class, () -> authService.login(request));
+
+        verify(dbProcedures).registerAccess(eq("admin@apollo.com"), any(UUID.class), any(), eq("FALHA"));
+    }
+
+    @Test
+    void shouldStillLoginWhenAccessAuditFails() {
+        LoginRequestDTO request = new LoginRequestDTO("admin@apollo.com", "password");
+        AuthUser user = authenticatedUser();
+        when(authUserRepository.findActiveByEmail("admin@apollo.com")).thenReturn(List.of(user));
+        when(passwordEncoder.matches("password", "encoded-password")).thenReturn(true);
+        when(jwtService.generateToken(any())).thenReturn("generated-token");
+        doThrow(new IllegalStateException("db down")).when(dbProcedures)
+                .registerAccess(any(), any(), any(), any());
+
+        LoginResponseDTO response = authService.login(request);
+
+        assertEquals("generated-token", response.getToken());
     }
 
     private AuthUser authenticatedUser() {
