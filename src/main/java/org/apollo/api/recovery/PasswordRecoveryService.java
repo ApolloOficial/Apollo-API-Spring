@@ -37,6 +37,7 @@ public class PasswordRecoveryService {
     static final int MAX_ATTEMPTS = 5;
     static final int MAX_SENDS = 5;
     static final int MAX_STARTS_PER_HOUR = 5;
+    static final int MAX_UNKNOWN_STARTS_PER_HOUR = 50;
     static final Duration CHALLENGE_LIFETIME = Duration.ofMinutes(30);
     static final Duration CODE_LIFETIME = Duration.ofMinutes(10);
     static final Duration RESET_LIFETIME = Duration.ofMinutes(10);
@@ -60,10 +61,15 @@ public class PasswordRecoveryService {
                 throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "Too many recovery requests");
             }
             recoveryRepository.consumeOpenByEmployee(employeeId);
+        } else if (recoveryRepository.countByEmployeeIdIsNullAndCreatedAtAfter(
+                Instant.now().minus(Duration.ofHours(1))) >= MAX_UNKNOWN_STARTS_PER_HOUR) {
+            // e-mail inexistente tambem passa por limite (global), igual ao de conta real
+            throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "Too many recovery requests");
         }
 
         PasswordRecovery recovery = new PasswordRecovery();
         recovery.setEmployeeId(employeeId);
+        recovery.setMaskedDestination(EmailMask.mask(email));
         recovery.setExpiresAt(Instant.now().plus(CHALLENGE_LIFETIME));
         recovery = recoveryRepository.save(recovery);
 
@@ -98,7 +104,8 @@ public class PasswordRecoveryService {
         recovery.setLastSentAt(now);
         recoveryRepository.save(recovery);
 
-        String destination = employee.map(found -> EmailMask.mask(found.getEmail())).orElse("");
+        String destination = employee.map(found -> EmailMask.mask(found.getEmail()))
+                .orElse(recovery.getMaskedDestination() == null ? "" : recovery.getMaskedDestination());
         if (employee.isPresent()) {
             try {
                 mailSender.sendCode(employee.get().getEmail(), employee.get().getFullName(), code,

@@ -27,6 +27,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class AuthService {
     private static final String INVALID_CREDENTIALS_MESSAGE = "Invalid credentials";
     private static final int MAX_ATTEMPTS = 5;
+    private static final int MAX_ATTEMPTS_PER_IP = 20;
     private static final long WINDOW_SECONDS = 15 * 60;
     private final ConcurrentHashMap<String, AttemptWindow> attempts = new ConcurrentHashMap<>();
 
@@ -40,13 +41,16 @@ public class AuthService {
 
     public LoginResponseDTO login(LoginRequestDTO request) {
         String key = request.getEmail().trim().toLowerCase(Locale.ROOT);
-        ensureNotBlocked(key);
+        String ipKey = "ip:" + remoteAddress();
+        ensureNotBlocked(key, MAX_ATTEMPTS);
+        ensureNotBlocked(ipKey, MAX_ATTEMPTS_PER_IP);
         var matchingUsers = authUserRepository.findActiveByEmail(request.getEmail()).stream()
                 .filter(authUser -> passwordEncoder.matches(request.getPassword(), authUser.getPasswordHash()))
                 .map(AuthenticatedUser::new)
                 .toList();
         if (matchingUsers.size() != 1) {
             registerFailure(key);
+            registerFailure(ipKey);
             registerAccess(request.getEmail(), "FALHA");
             throw invalidCredentials();
         }
@@ -106,9 +110,17 @@ public class AuthService {
         return null;
     }
 
-    private void ensureNotBlocked(String key) {
+    private void ensureNotBlocked(String key, int max) {
         AttemptWindow window = attempts.get(key);
-        if (window != null && !window.isExpired() && window.attempts >= MAX_ATTEMPTS) throw invalidCredentials();
+        if (window != null && !window.isExpired() && window.attempts >= max) throw invalidCredentials();
+    }
+
+    // Limite por IP usa so o endereco da conexao: X-Forwarded-For e forjavel pelo cliente.
+    private String remoteAddress() {
+        if (RequestContextHolder.getRequestAttributes() instanceof ServletRequestAttributes attributes) {
+            return String.valueOf(attributes.getRequest().getRemoteAddr());
+        }
+        return "unknown";
     }
 
     private void registerFailure(String key) {

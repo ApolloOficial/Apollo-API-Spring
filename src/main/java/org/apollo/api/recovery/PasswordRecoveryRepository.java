@@ -14,6 +14,8 @@ public interface PasswordRecoveryRepository extends JpaRepository<PasswordRecove
 
     long countByEmployeeIdAndCreatedAtAfter(UUID employeeId, Instant after);
 
+    long countByEmployeeIdIsNullAndCreatedAtAfter(Instant after);
+
     @Modifying
     @Query("UPDATE PasswordRecovery r SET r.consumed = true WHERE r.employeeId = :employeeId AND r.consumed = false")
     int consumeOpenByEmployee(@Param("employeeId") UUID employeeId);
