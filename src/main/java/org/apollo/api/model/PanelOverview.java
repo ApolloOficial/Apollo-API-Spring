@@ -62,4 +62,16 @@ public class PanelOverview {
 
     @Column(name = "active_panel_warnings")
     private Long activePanelWarnings;
+
+    @Column(name = "pmax_w")
+    private BigDecimal pmaxW;
+
+    @Column(name = "efficiency_pct")
+    private BigDecimal efficiencyPct;
+
+    @Column(name = "string_installed_panels")
+    private Long stringInstalledPanels;
+
+    @Column(name = "string_purchased_qty")
+    private Integer stringPurchasedQty;
 }

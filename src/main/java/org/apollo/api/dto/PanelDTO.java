@@ -11,12 +11,14 @@ import java.util.UUID;
 public record PanelDTO(Long id, UUID stringId, String stringCode, String inverterCode, UUID companyUnitId,
                        String serialNumber, String barcode, String manufacturer, String model,
                        OperatingStatsEnum operatingStats, LocalDate installationDt, LocalDateTime activatedAt,
-                       BigDecimal stringHealthScore, Long activeWarnings) {
+                       BigDecimal stringHealthScore, Long activeWarnings,
+                       BigDecimal pmaxW, BigDecimal efficiencyPct, Long installedPanels, Integer purchasedPanels) {
 
     public static PanelDTO of(PanelOverview p) {
         return new PanelDTO(p.getPanelId(), p.getStringId(), p.getStringCode(), p.getInverterCode(),
                 p.getCompanyUnitId(), p.getSerialNumber(), p.getBarcode(), p.getManufacturer(), p.getModel(),
                 p.getOperatingStats(), p.getInstallationDt(), p.getActivatedAt(), p.getStringHealthScore(),
-                p.getActivePanelWarnings());
+                p.getActivePanelWarnings(), p.getPmaxW(), p.getEfficiencyPct(), p.getStringInstalledPanels(),
+                p.getStringPurchasedQty());
     }
 }
