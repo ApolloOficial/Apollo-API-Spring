@@ -27,6 +27,11 @@ public class GlobalExceptionHandler {
         return error(HttpStatus.NOT_FOUND, ex.getMessage());
     }
 
+    @ExceptionHandler(ConflictException.class)
+    ResponseEntity<ErrorResponse> conflictRule(ConflictException ex) {
+        return error(HttpStatus.CONFLICT, ex.getMessage());
+    }
+
     @ExceptionHandler(BusinessRuleException.class)
     ResponseEntity<ErrorResponse> business(BusinessRuleException ex) {
         return error(HttpStatus.BAD_REQUEST, ex.getMessage());
@@ -34,7 +39,9 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler({MethodArgumentNotValidException.class})
     ResponseEntity<ErrorResponse> validation(MethodArgumentNotValidException ex) {
-        String message = ex.getBindingResult().getFieldErrors().stream().map(e -> e.getField()+": "+e.getDefaultMessage()).collect(Collectors.joining("; ")); return error(HttpStatus.BAD_REQUEST, message);
+        String message = ex.getBindingResult().getFieldErrors().stream().map(e -> e.getField()+": "+e.getDefaultMessage()).collect(Collectors.joining("; ")); ResponseEntity<ErrorResponse> response = error(HttpStatus.BAD_REQUEST, message);
+        response.getBody().setCode("VALIDATION_FAILED");
+        return response;
     }
 
     @ExceptionHandler({HttpMessageNotReadableException.class, MethodArgumentTypeMismatchException.class, MissingServletRequestParameterException.class, IllegalArgumentException.class})
@@ -113,6 +120,10 @@ public class GlobalExceptionHandler {
     }
 
     private ResponseEntity<ErrorResponse> error(HttpStatus status, String message) {
-        return ResponseEntity.status(status).body(new ErrorResponse(status.value(), message));
+        String traceId = java.util.UUID.randomUUID().toString().substring(0, 8);
+        if (status.is5xxServerError()) {
+            log.error("traceId={} status={} message={}", traceId, status.value(), message);
+        }
+        return ResponseEntity.status(status).body(new ErrorResponse(status.value(), message, status.name(), traceId));
     }
 }
