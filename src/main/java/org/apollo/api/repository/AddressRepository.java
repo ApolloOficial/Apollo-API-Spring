@@ -17,7 +17,7 @@ public interface AddressRepository extends JpaRepository<Address, Long> {
     // garantido pela subconsulta em company_unit -> company.
     @Query("""
             SELECT a FROM Address a
-            WHERE a.id IN (
+            WHERE a.active = true AND a.id IN (
                 SELECT cu.address.id FROM CompanyUnit cu
                 WHERE cu.company.id = :companyId AND cu.address IS NOT NULL
             )
