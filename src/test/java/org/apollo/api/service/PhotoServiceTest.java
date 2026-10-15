@@ -74,15 +74,44 @@ class PhotoServiceTest {
     void shouldSaveValidPhotoForTheLoggedUser() {
         when(tenantContext.getUserId()).thenReturn(USER_ID);
         when(photoRepository.findById(USER_ID)).thenReturn(Optional.empty());
-        MockMultipartFile file = new MockMultipartFile("file", "photo.png", "image/png", PNG);
+        MockMultipartFile file = new MockMultipartFile("file", "photo.png", "image/png", realPng(800, 600));
 
         photoService.upload(file);
 
         ArgumentCaptor<EmployeePhoto> captor = ArgumentCaptor.forClass(EmployeePhoto.class);
         verify(photoRepository).save(captor.capture());
         assertEquals(USER_ID, captor.getValue().getEmployeeId());
-        assertEquals("image/png", captor.getValue().getContentType());
-        assertArrayEquals(PNG, captor.getValue().getData());
+        assertEquals("image/jpeg", captor.getValue().getContentType());
+        java.awt.image.BufferedImage saved = javax.imageio.ImageIO.read(
+                new java.io.ByteArrayInputStream(captor.getValue().getData()));
+        assertEquals(512, saved.getWidth());
+        assertEquals(512, saved.getHeight());
+    }
+
+    @Test
+    void shouldRejectImageLargerThanMaxDimension() {
+        MockMultipartFile file = new MockMultipartFile("file", "big.png", "image/png",
+                realPng(PhotoService.MAX_INPUT_SIDE + 1, 10));
+
+        assertThrows(BusinessRuleException.class, () -> photoService.upload(file));
+    }
+
+    @Test
+    void shouldRejectTruncatedImage() {
+        MockMultipartFile file = new MockMultipartFile("file", "x.png", "image/png", PNG);
+
+        assertThrows(BusinessRuleException.class, () -> photoService.upload(file));
+    }
+
+    private static byte[] realPng(int w, int h) {
+        try {
+            java.awt.image.BufferedImage img = new java.awt.image.BufferedImage(w, h, java.awt.image.BufferedImage.TYPE_INT_RGB);
+            java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
+            javax.imageio.ImageIO.write(img, "png", out);
+            return out.toByteArray();
+        } catch (java.io.IOException e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     @Test
