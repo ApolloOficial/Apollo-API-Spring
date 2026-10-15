@@ -16,6 +16,9 @@ WORKDIR /app
 
 COPY --from=build /app/target/Apollo-API-Spring-0.0.1-SNAPSHOT.jar app.jar
 
+RUN useradd --system --no-create-home apollo
+USER apollo
+
 EXPOSE 8080
 
 ENTRYPOINT ["java", "-jar", "app.jar"]
