@@ -45,7 +45,7 @@ public class StringService {
                                    BigDecimal maxHealth, Boolean withWarnings, Pageable pageable) {
         Specification<StringOverview> spec = Specification
                 .where(Scope.<StringOverview>unitColumnInCompany("companyUnitId", companyId()))
-                .and(Specs.<StringOverview>equalTo(s -> s.get("companyUnitId"), companyUnitId))
+                .and(Specs.<StringOverview>equalTo(s -> s.get("companyUnitId"), scopedUnit(companyUnitId)))
                 .and(Specs.<StringOverview>equalTo(s -> s.get("status"),
                         status == null || status.isBlank() ? null : status.trim().toUpperCase()))
                 .and(Specs.<StringOverview>contains(s -> s.get("inverterCode"), inverterCode))
@@ -122,6 +122,10 @@ public class StringService {
 
     private Specification<StringOverview> hasWarnings() {
         return (root, query, cb) -> cb.greaterThan(root.<Long>get("activeWarnings"), 0L);
+    }
+
+    private UUID scopedUnit(UUID requested) {
+        return "TECHNICIAN".equals(tenantContext.getRoleName()) ? tenantContext.getCompanyUnitId() : requested;
     }
 
     private Long companyId() {
