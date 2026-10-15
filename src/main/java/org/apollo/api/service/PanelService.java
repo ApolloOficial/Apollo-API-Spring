@@ -42,7 +42,7 @@ public class PanelService {
         Specification<PanelOverview> spec = Specification
                 .where(Scope.<PanelOverview>unitColumnInCompany("companyUnitId", companyId()))
                 .and(Specs.<PanelOverview>equalTo(p -> p.get("stringId"), stringId))
-                .and(Specs.<PanelOverview>equalTo(p -> p.get("companyUnitId"), companyUnitId))
+                .and(Specs.<PanelOverview>equalTo(p -> p.get("companyUnitId"), scopedUnit(companyUnitId)))
                 .and(Specs.<PanelOverview>equalTo(p -> p.get("operatingStats"), status))
                 .and(Specs.<PanelOverview>contains(p -> p.get("serialNumber"), serialNumber))
                 .and(Specs.<PanelOverview>contains(p -> p.get("barcode"), barcode));
@@ -107,6 +107,10 @@ public class PanelService {
             throw new BusinessRuleException("The panel " + panel.getSerialNumber() + " belongs to another unit");
         }
         return panel;
+    }
+
+    private UUID scopedUnit(UUID requested) {
+        return "TECHNICIAN".equals(tenantContext.getRoleName()) ? tenantContext.getCompanyUnitId() : requested;
     }
 
     private Long companyId() {
