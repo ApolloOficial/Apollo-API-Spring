@@ -1,6 +1,7 @@
 package org.apollo.api.recovery;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import java.util.List;
 
@@ -42,7 +43,8 @@ public final class RecoveryDtos {
     public record PasswordResetRequest(
             @NotBlank(message = "Reset token is required") String resetToken,
             @NotBlank(message = "New password is required")
-            @Size(min = 8, max = 72, message = "New password must be between 8 and 72 characters")
+            @Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z0-9]).{8,72}$",
+                    message = "Password must have 8 to 72 characters with uppercase, lowercase, digit and special character")
             String newPassword) {
     }
 }

@@ -44,4 +44,7 @@ public class Address {
     @JdbcTypeCode(SqlTypes.CHAR)
     @Column(name = "zip_code", nullable = false, length = 8)
     private String zipCode;
+
+    @Column(name = "is_active", nullable = false)
+    private boolean active = true;
 }

@@ -36,7 +36,9 @@ public class AddressService {
     private final TenantContext tenantContext;
 
     public Page<AddressDTO> findAll(Pageable pageable) {
-        return addressRepository.findAllForCompany(companyId(), pageable).map(this::toDTO);
+        Pageable capped = org.springframework.data.domain.PageRequest.of(
+                Math.max(pageable.getPageNumber(), 0), Math.min(Math.max(pageable.getPageSize(), 1), 100), pageable.getSort());
+        return addressRepository.findAllForCompany(companyId(), capped).map(this::toDTO);
     }
 
     public AddressDTO findById(Long id) {
@@ -64,17 +66,23 @@ public class AddressService {
 
     public void delete(Long id) {
         Address address = requireAccessible(findAddress(id));
-        addressRepository.delete(address);
+        if (companyUnitRepository.findByAddressId(address.getId()).isPresent()) {
+            throw new org.apollo.api.exception.ConflictException("Address is in use by a company unit and cannot be deactivated");
+        }
+        address.setActive(false);
+        addressRepository.save(address);
     }
 
     private Address findAddress(Long id) {
         return addressRepository.findById(id)
+                .filter(Address::isActive)
                 .orElseThrow(() -> new ResourceNotFoundException("Address not found: " + id));
     }
 
     private Address requireAccessible(Address address) {
         Optional<CompanyUnit> owningUnit = companyUnitRepository.findByAddressId(address.getId());
-        if (owningUnit.isPresent() && !owningUnit.get().getCompany().getId().equals(companyId())) {
+        // Endereco sem unidade nao tem dono no modelo: nao e acessivel a ninguem (404).
+        if (owningUnit.isEmpty() || !owningUnit.get().getCompany().getId().equals(companyId())) {
             // Reported as 404: an address belonging to another tenant should not even
             // be confirmed to exist.
             throw new ResourceNotFoundException("Address not found: " + address.getId());
@@ -108,7 +116,8 @@ public class AddressService {
                 dto.getNeighborhood(),
                 dto.getCity(),
                 dto.getState(),
-                dto.getZipCode()
+                dto.getZipCode(),
+                true
         );
     }
 }
