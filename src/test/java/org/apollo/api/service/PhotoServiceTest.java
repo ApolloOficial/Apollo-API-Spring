@@ -71,7 +71,7 @@ class PhotoServiceTest {
     }
 
     @Test
-    void shouldSaveValidPhotoForTheLoggedUser() {
+    void shouldSaveValidPhotoForTheLoggedUser() throws java.io.IOException {
         when(tenantContext.getUserId()).thenReturn(USER_ID);
         when(photoRepository.findById(USER_ID)).thenReturn(Optional.empty());
         MockMultipartFile file = new MockMultipartFile("file", "photo.png", "image/png", realPng(800, 600));
