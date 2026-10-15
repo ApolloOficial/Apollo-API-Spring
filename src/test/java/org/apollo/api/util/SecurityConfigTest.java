@@ -59,6 +59,13 @@ class SecurityConfigTest {
     }
 
     @Test
+    void shouldDenyUnmappedRoutesEvenForAuthenticatedUsers() throws Exception {
+        authenticate("manager-token", "MANAGER");
+        mockMvc.perform(get("/api/v1/not-mapped").header(HttpHeaders.AUTHORIZATION, "Bearer manager-token"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
     void shouldAllowOperatorToRegisterInverter() throws Exception {
         authenticate("operator-token", "OPERATOR");
         mockMvc.perform(post("/api/v1/inverters").header(HttpHeaders.AUTHORIZATION, "Bearer operator-token"))

@@ -34,6 +34,10 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
+    // Swagger so fica publico quando SWAGGER_ENABLED=true (padrao: desligado)
+    @org.springframework.beans.factory.annotation.Value("${app.swagger.enabled:false}")
+    private boolean swaggerEnabled;
+
     @Bean
     PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
@@ -70,7 +74,10 @@ public class SecurityConfig {
                         // navegador enviar o DELETE/POST/PUT/PATCH real -> vira "erro de CORS".
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/api/v1/auth/login").permitAll()
-                        .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**", "/v3/api-docs.yaml").permitAll()
+                        .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
+                        .requestMatchers(swaggerEnabled
+                                ? new String[] {"/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**", "/v3/api-docs.yaml"}
+                                : new String[] {"/__swagger-disabled__"}).permitAll()
 
                         // ==========================================================================
                         //  2. DADOS DE REFERENCIA / CADASTROS (somente leitura para todos os perfis)
@@ -138,10 +145,12 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/search/**").hasAnyRole(MANAGER, OPERATOR, ANALYST)
 
                         // ==========================================================================
-                        //  5. FALLBACK — qualquer outra rota exige apenas estar autenticado
-                        //     (ex.: PATCH /api/v1/auth/password = trocar a propria senha)
+                        //  5. FAIL-CLOSED — rotas "qualquer usuario logado" listadas acima;
+                        //     toda rota nao mapeada e negada (403)
                         // ==========================================================================
-                        .anyRequest().authenticated())
+                        .requestMatchers("/api/v1/auth/**", "/api/v1/settings/**", "/api/v1/notifications/**",
+                                "/api/v1/devices/**").authenticated()
+                        .anyRequest().denyAll())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
