@@ -18,6 +18,9 @@ import org.springframework.web.multipart.MultipartFile;
 public class PhotoService {
 
     public static final long MAX_BYTES = 1024 * 1024;
+    // dimensao maxima aceita na entrada (anti "decompression bomb") e tamanho final do avatar
+    static final int MAX_INPUT_SIDE = 4096;
+    static final int AVATAR_SIDE = 512;
 
     private final TenantContext tenantContext;
     private final EmployeePhotoRepository photoRepository;
@@ -30,11 +33,12 @@ public class PhotoService {
         if (file.getSize() > MAX_BYTES) {
             throw new BusinessRuleException("Photo must be at most 1 MB");
         }
-        byte[] data = read(file);
-        String contentType = detectContentType(data);
-        if (contentType == null) {
+        byte[] original = read(file);
+        if (detectContentType(original) == null) {
             throw new BusinessRuleException("Photo must be a JPEG or PNG image");
         }
+        byte[] data = normalize(original);
+        String contentType = "image/jpeg";
         UUID userId = tenantContext.getUserId();
         EmployeePhoto photo = photoRepository.findById(userId)
                 .orElseGet(() -> new EmployeePhoto(userId, contentType, data));
@@ -66,6 +70,51 @@ public class PhotoService {
             return "image/png";
         }
         return null;
+    }
+
+    // Decodifica, recorta ao centro em quadrado, reduz para AVATAR_SIDE e regrava como JPEG.
+    static byte[] normalize(byte[] data) {
+        try (javax.imageio.stream.ImageInputStream in = javax.imageio.ImageIO.createImageInputStream(
+                new java.io.ByteArrayInputStream(data))) {
+            java.util.Iterator<javax.imageio.ImageReader> readers = javax.imageio.ImageIO.getImageReaders(in);
+            if (!readers.hasNext()) {
+                throw new BusinessRuleException("Photo is not a valid image");
+            }
+            javax.imageio.ImageReader reader = readers.next();
+            java.awt.image.BufferedImage source;
+            try {
+                reader.setInput(in);
+                int w = reader.getWidth(0);
+                int h = reader.getHeight(0);
+                if (w < 1 || h < 1 || w > MAX_INPUT_SIDE || h > MAX_INPUT_SIDE) {
+                    throw new BusinessRuleException("Photo dimensions must be at most " + MAX_INPUT_SIDE + "x" + MAX_INPUT_SIDE);
+                }
+                source = reader.read(0);
+            } finally {
+                reader.dispose();
+            }
+            int side = Math.min(source.getWidth(), source.getHeight());
+            java.awt.image.BufferedImage square = source.getSubimage(
+                    (source.getWidth() - side) / 2, (source.getHeight() - side) / 2, side, side);
+            int target = Math.min(side, AVATAR_SIDE);
+            java.awt.image.BufferedImage out = new java.awt.image.BufferedImage(
+                    target, target, java.awt.image.BufferedImage.TYPE_INT_RGB);
+            java.awt.Graphics2D g = out.createGraphics();
+            g.setColor(java.awt.Color.WHITE);
+            g.fillRect(0, 0, target, target);
+            g.setRenderingHint(java.awt.RenderingHints.KEY_INTERPOLATION,
+                    java.awt.RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+            g.drawImage(square, 0, 0, target, target, null);
+            g.dispose();
+            java.io.ByteArrayOutputStream bytes = new java.io.ByteArrayOutputStream();
+            javax.imageio.ImageIO.write(out, "jpg", bytes);
+            return bytes.toByteArray();
+        } catch (IOException | RuntimeException exception) {
+            if (exception instanceof BusinessRuleException business) {
+                throw business;
+            }
+            throw new BusinessRuleException("Photo is not a valid image");
+        }
     }
 
     private byte[] read(MultipartFile file) {

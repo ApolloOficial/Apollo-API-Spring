@@ -32,6 +32,9 @@ public class PasswordRecovery {
     @Column(name = "code_expires_at")
     private Instant codeExpiresAt;
 
+    @Column(name = "masked_destination", length = 120)
+    private String maskedDestination;
+
     @Column(name = "attempts", nullable = false)
     private int attempts;
 
