@@ -40,7 +40,7 @@ public class StockService {
                 .where(Specs.<Stock>equalTo(s -> s.get("companyUnit").get("company").get("id"), companyId()))
                 .and(Specs.<Stock>equalTo(s -> s.get("companyUnit").get("id"), companyUnitId))
                 .and(matchesPart(search))
-                .and(Boolean.TRUE.equals(belowMinimum) ? belowMinimum() : null);
+                .and(Boolean.TRUE.equals(belowMinimum) ? belowMinimum() : Specs.<Stock>none());
         return stockRepository.findAll(spec, pageable).map(this::toDTO);
     }
 
@@ -97,7 +97,7 @@ public class StockService {
 
     private Specification<Stock> matchesPart(String search) {
         if (search == null || search.isBlank()) {
-            return null;
+            return Specs.none();
         }
         String pattern = "%" + search.trim().toLowerCase() + "%";
         return (root, query, cb) -> cb.or(

@@ -44,8 +44,8 @@ public class WarningService {
                 .and(Specs.<Warning>equalTo(w -> w.get("severity"), severity))
                 .and(Specs.<Warning>equalTo(w -> w.get("type"), type))
                 .and(Specs.<Warning>equalTo(w -> w.get("status"), status))
-                .and(companyUnitId == null ? null : inUnit(companyUnitId))
-                .and(stringId == null ? null : forString(stringId))
+                .and(companyUnitId == null ? Specs.<Warning>none() : inUnit(companyUnitId))
+                .and(stringId == null ? Specs.<Warning>none() : forString(stringId))
                 .and(Specs.<Warning>equalTo(w -> w.get("panel").get("id"), panelId));
         Page<Warning> page = warningRepository.findAll(spec, pageable);
         Map<Long, Long> maintenanceByWarning = maintenanceIds(page.getContent());
