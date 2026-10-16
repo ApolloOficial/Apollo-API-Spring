@@ -50,8 +50,8 @@ public class StringService {
                         status == null || status.isBlank() ? null : status.trim().toUpperCase()))
                 .and(Specs.<StringOverview>contains(s -> s.get("inverterCode"), inverterCode))
                 .and(matchesCodeOrInvoice(search))
-                .and(maxHealth == null ? null : healthBelow(maxHealth))
-                .and(Boolean.TRUE.equals(withWarnings) ? hasWarnings() : null);
+                .and(maxHealth == null ? Specs.<StringOverview>none() : healthBelow(maxHealth))
+                .and(Boolean.TRUE.equals(withWarnings) ? hasWarnings() : Specs.<StringOverview>none());
         return stringOverviewRepository.findAll(spec, pageable).map(StringDTO::of);
     }
 
@@ -108,7 +108,7 @@ public class StringService {
 
     private Specification<StringOverview> matchesCodeOrInvoice(String search) {
         if (search == null || search.isBlank()) {
-            return null;
+            return Specs.none();
         }
         String pattern = "%" + search.trim().toLowerCase() + "%";
         return (root, query, cb) -> cb.or(

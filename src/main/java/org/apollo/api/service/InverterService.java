@@ -67,7 +67,7 @@ public class InverterService {
 
     private Specification<Inverter> matchesCodeOrSerial(String search) {
         if (search == null || search.isBlank()) {
-            return null;
+            return Specs.none();
         }
         String pattern = "%" + search.trim().toLowerCase() + "%";
         return (root, query, cb) -> cb.or(

@@ -68,10 +68,10 @@ public class MaintenanceRegisterService {
                 .and(Specs.<MaintenanceRegister>equalTo(m -> m.get("technician").get("id"), technicianId))
                 .and(Specs.<MaintenanceRegister>equalTo(m -> m.get("maintenanceType").get("id"), maintenanceTypeId))
                 .and(Specs.<MaintenanceRegister>equalTo(m -> m.get("maintenanceStatus"), status))
-                .and(priority == null ? null : withSeverity(priority))
-                .and(companyUnitId == null ? null : inUnit(companyUnitId))
-                .and(Boolean.TRUE.equals(thisMonth) ? openedThisMonth() : null)
-                .and(Boolean.TRUE.equals(overdue) ? isOverdue() : null);
+                .and(priority == null ? Specs.<MaintenanceRegister>none() : withSeverity(priority))
+                .and(companyUnitId == null ? Specs.<MaintenanceRegister>none() : inUnit(companyUnitId))
+                .and(Boolean.TRUE.equals(thisMonth) ? openedThisMonth() : Specs.<MaintenanceRegister>none())
+                .and(Boolean.TRUE.equals(overdue) ? isOverdue() : Specs.<MaintenanceRegister>none());
         Page<MaintenanceRegister> page = maintenanceRegisterRepository.findAll(spec, pageable);
         Map<Long, BigDecimal> partsCost = partsCostFor(page.getContent());
         return page.map(m -> toDTO(m, partsCost.getOrDefault(m.getId(), BigDecimal.ZERO)));
