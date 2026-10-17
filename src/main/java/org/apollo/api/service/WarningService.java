@@ -61,6 +61,12 @@ public class WarningService {
         return toDTO(warning, maintenanceIds(List.of(warning)).get(warning.getId()));
     }
 
+    public WarningDTO findCreated(Long id) {
+        Warning warning = warningRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Warning not found: " + id));
+        return toDTO(warning, maintenanceIds(List.of(warning)).get(warning.getId()));
+    }
+
     private Specification<Warning> inCompany(Long companyId) {
         return (root, query, cb) -> Scope.warningInCompany(cb, root, companyId);
     }
