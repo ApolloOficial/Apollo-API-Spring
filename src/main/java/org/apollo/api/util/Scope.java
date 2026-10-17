@@ -39,14 +39,14 @@ public final class Scope {
     private static Path<Object> unitViaString(From<?, ?> warning) {
         Join<Object, Object> panelString = warning.join("panelString", JoinType.LEFT);
         Join<Object, Object> inverter = panelString.join("inverter", JoinType.LEFT);
-        return inverter.get("companyUnit");
+        return inverter.join("companyUnit", JoinType.LEFT);
     }
 
     private static Path<Object> unitViaPanel(From<?, ?> warning) {
         Join<Object, Object> panel = warning.join("panel", JoinType.LEFT);
         Join<Object, Object> panelString = panel.join("panelString", JoinType.LEFT);
         Join<Object, Object> inverter = panelString.join("inverter", JoinType.LEFT);
-        return inverter.get("companyUnit");
+        return inverter.join("companyUnit", JoinType.LEFT);
     }
 
     /** O alerta pertence a uma filial da empresa informada? */
