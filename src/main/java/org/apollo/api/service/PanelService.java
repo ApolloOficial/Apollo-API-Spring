@@ -94,7 +94,7 @@ public class PanelService {
         Panel panel = requirePanelOfMyUnit(dto.barcode());
         Long warningId = procedures.reportPanelIssue(panel.getBarcode(), tenantContext.getUserId(),
                 dto.type().name(), dto.severity().name(), dto.message());
-        return warningService.findById(warningId);
+        return warningService.findCreated(warningId);
     }
 
     /** A placa precisa existir na empresa e na filial do tecnico (o banco confere o resto). */
