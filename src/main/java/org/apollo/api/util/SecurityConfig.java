@@ -144,6 +144,8 @@ public class SecurityConfig {
                         // Busca global.
                         .requestMatchers(HttpMethod.GET, "/api/v1/search/**").hasAnyRole(MANAGER, OPERATOR, ANALYST)
 
+                        .requestMatchers("/api/v1/integrations/sungrow/**").hasRole(MANAGER)
+
                         // ==========================================================================
                         //  5. FAIL-CLOSED — rotas "qualquer usuario logado" listadas acima;
                         //     toda rota nao mapeada e negada (403)
