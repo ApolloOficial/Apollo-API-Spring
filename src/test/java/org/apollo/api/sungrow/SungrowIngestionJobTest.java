@@ -26,7 +26,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.dao.DataIntegrityViolationException;
 
 class SungrowIngestionJobTest {
-
     private static final OffsetDateTime MEASURED_AT = OffsetDateTime.parse("2026-10-23T12:00:00-03:00");
 
     private SungrowProperties properties;
@@ -44,7 +43,6 @@ class SungrowIngestionJobTest {
         job = new SungrowIngestionJob(properties, source, targets, db);
     }
 
-    // 2 MPPTs x 2 entradas = 4 strings; so (1,1), (1,2) e (2,1) estao ativas no Apollo.
     private static SungrowTarget target(String serial) {
         return new SungrowTarget(serial, 2, 2, Set.of(new SungrowPointMapper.StringSlot(1, 1),
                 new SungrowPointMapper.StringSlot(1, 2), new SungrowPointMapper.StringSlot(2, 1)));

@@ -4,14 +4,9 @@ import java.util.List;
 import java.util.Map;
 import org.springframework.stereotype.Component;
 
-/**
- * Planta real: usa o token guardado e chama a API da Sungrow. Se a Sungrow recusar o token, renova uma vez e
- * repete. Sem autorizacao ainda, falha com NOT_AUTHORIZED (o job avisa e tenta de novo na proxima rodada).
- */
 @Component
 @ConditionalOnSungrowLive
 public class SungrowLiveSource implements SungrowRealTimeSource {
-
     private final SungrowTokenService tokens;
     private final SungrowClient client;
 

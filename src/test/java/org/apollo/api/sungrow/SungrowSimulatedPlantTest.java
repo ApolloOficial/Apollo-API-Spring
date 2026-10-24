@@ -14,7 +14,6 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 class SungrowSimulatedPlantTest {
-
     private static final ZoneId SAO_PAULO = ZoneId.of("America/Sao_Paulo");
     private static final List<String> POINTS = SungrowPointMapper.pointIds(4);
 
@@ -27,7 +26,6 @@ class SungrowSimulatedPlantTest {
         return new SungrowSimulatedPlant(properties, at(instant));
     }
 
-    // 15:07 UTC = 12:07 em Sao Paulo -> meio-dia, device_time arredondado para baixo no passo de 5 min
     private static final String NOON = "2026-10-23T15:07:00Z";
     private static final String NIGHT = "2026-10-23T04:00:00Z";
 
@@ -92,8 +90,8 @@ class SungrowSimulatedPlantTest {
         properties.setSimulationWeakStrings("SN1:2:0.5");
 
         Map<String, Object> device = plant(properties, NOON).realTime(List.of("SN1"), POINTS).get(0);
-        double healthy = Double.parseDouble((String) device.get("p70"));   // corrente da string 1
-        double weak = Double.parseDouble((String) device.get("p71"));      // corrente da string 2
+        double healthy = Double.parseDouble((String) device.get("p70"));
+        double weak = Double.parseDouble((String) device.get("p71"));
 
         assertTrue(weak < healthy * 0.65, "weak string should produce about half of a healthy one");
     }

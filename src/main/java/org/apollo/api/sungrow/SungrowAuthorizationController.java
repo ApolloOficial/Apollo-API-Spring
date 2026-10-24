@@ -16,18 +16,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
-/**
- * Fluxo manual de autorizacao (OAuth 2.0): o dono da planta aprova o aplicativo na iSolarCloud, a Sungrow
- * redireciona para o redirect_uri com ?code=..., e o Gerente envia esse codigo aqui. So o Gerente acessa
- * (SecurityConfig). Os tokens nunca sao devolvidos pela API.
- */
 @RestController
 @RequestMapping("/api/v1/integrations/sungrow")
 @ConditionalOnSungrowLive
 @Tag(name = "Sungrow", description = "Autorizacao da integracao com a API aberta da Sungrow")
 @SecurityRequirement(name = "bearer-key")
 public class SungrowAuthorizationController {
-
     private static final Logger log = LoggerFactory.getLogger(SungrowAuthorizationController.class);
 
     private final SungrowTokenService tokens;

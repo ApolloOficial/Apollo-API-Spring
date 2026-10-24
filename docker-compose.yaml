@@ -37,7 +37,6 @@ services:
       SWAGGER_ENABLED: ${SWAGGER_ENABLED:-true}
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set}
       JWT_EXPIRATION_MS: ${JWT_EXPIRATION_MS:-86400000}
-      # Integracao Sungrow (desligada por padrao)
       SUNGROW_ENABLED: ${SUNGROW_ENABLED:-false}
       SUNGROW_BASE_URL: ${SUNGROW_BASE_URL:-https://gateway.isolarcloud.com.hk}
       SUNGROW_APPKEY: ${SUNGROW_APPKEY:-}

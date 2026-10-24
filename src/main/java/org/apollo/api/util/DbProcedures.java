@@ -129,13 +129,7 @@ public class DbProcedures {
                 companyId, threshold);
     }
 
-    // ---------------------------------------------------------------- leituras do inversor
 
-    /**
-     * pr_ingest_string_measurement: grava a leitura de uma string, achada pelo numero de serie do inversor +
-     * MPPT + entrada. Faz upsert por (string, measured_at) e falha se nao houver string ativa nessa posicao.
-     * Cada chamada e independente (sem transacao), entao uma leitura recusada nao desfaz as outras.
-     */
     public void ingestStringMeasurement(String inverterSerial, int mpptNumber, int entryNumber,
                                         OffsetDateTime measuredAt, BigDecimal powerW, BigDecimal voltageV,
                                         BigDecimal currentA, BigDecimal generatedEnergyKwh, String faultCode,

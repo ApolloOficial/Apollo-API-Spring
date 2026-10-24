@@ -19,7 +19,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
 class SungrowTokenServiceTest {
-
     private static final Instant NOW = Instant.parse("2026-10-23T12:00:00Z");
 
     private SungrowClient client;
@@ -33,7 +32,6 @@ class SungrowTokenServiceTest {
         SungrowProperties properties = new SungrowProperties();
         properties.setTokenRefreshMarginSeconds(600);
         service = new SungrowTokenService(client, store, properties, Clock.fixed(NOW, ZoneOffset.UTC));
-        // withLock apenas executa a acao (o lock de linha e responsabilidade do banco).
         when(store.withLock(any())).thenAnswer(invocation -> ((Supplier<?>) invocation.getArgument(0)).get());
     }
 

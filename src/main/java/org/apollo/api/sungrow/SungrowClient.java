@@ -13,19 +13,12 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 
-/**
- * Cliente da API aberta da Sungrow (iSolarCloud). Todas as chamadas sao POST com JSON e levam
- * os headers x-access-key (e Authorization: Bearer, quando ha token) e o appkey no corpo.
- * Nunca registra em log tokens, appkey ou access key.
- */
 @Component
 @ConditionalOnSungrowLive
 public class SungrowClient {
-
     private static final Logger log = LoggerFactory.getLogger(SungrowClient.class);
     private static final MediaType JSON_UTF8 = new MediaType("application", "json", StandardCharsets.UTF_8);
     private static final String SUCCESS = "1";
-    /** device_type 1 = inversor (Appendix 1 da API). */
     private static final int DEVICE_TYPE_INVERTER = 1;
 
     private final RestClient restClient;
@@ -36,7 +29,6 @@ public class SungrowClient {
         this.properties = properties;
     }
 
-    /** Troca o codigo de autorizacao (devolvido ao redirect_uri) por access/refresh token. */
     public SungrowTokenResponse.TokenData exchangeCode(String code) {
         Map<String, Object> body = baseBody();
         body.put("code", code);
@@ -46,23 +38,17 @@ public class SungrowClient {
         return tokenData(response);
     }
 
-    /** Renova o token. A Sungrow troca tambem o refresh token: o novo precisa ser salvo. */
     public SungrowTokenResponse.TokenData refresh(String refreshToken) {
         Map<String, Object> body = baseBody();
         body.put("refresh_token", refreshToken);
         SungrowTokenResponse response = post(properties.getRefreshPath(), null, body, SungrowTokenResponse.class);
         SungrowTokenResponse.TokenData data = tokenData(response);
-        // Na renovacao a Sungrow tambem informa result_data.code (1 = sucesso).
         if (data.code() != null && !SUCCESS.equals(String.valueOf(data.code()))) {
             throw new SungrowApiException("REFRESH_" + data.code(), "refresh token rejected");
         }
         return data;
     }
 
-    /**
-     * Dados em tempo real (menor unidade: W, V, A) dos inversores pelos numeros de serie.
-     * Devolve um mapa por dispositivo com device_sn, device_time, dev_fault_status e p{id}.
-     */
     public List<Map<String, Object>> realTime(String accessToken, List<String> serialNumbers, List<String> pointIds) {
         Map<String, Object> body = baseBody();
         body.put("sn_list", serialNumbers);

@@ -19,19 +19,11 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-/**
- * Planta SIMULADA: gera, no formato da API da Sungrow, a leitura que um inversor real devolveria (curva de sol ao
- * longo do dia, pequena variacao por string e ruido). Nada e lido da Sungrow e nao ha autorizacao a fazer; o
- * restante do fluxo (mapeamento, procedure de ingestao, banco) e o mesmo da planta real. As leituras sao gravadas
- * com data_source = SIMULATOR.
- */
 @Component
 @ConditionalOnSungrowSimulated
 public class SungrowSimulatedPlant implements SungrowRealTimeSource {
-
     private static final Logger log = LoggerFactory.getLogger(SungrowSimulatedPlant.class);
     private static final DateTimeFormatter DEVICE_TIME = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
-    /** ponto -> {numero da string, 0 = tensao / 1 = corrente}. */
     private static final Map<Integer, int[]> POINTS = new HashMap<>();
 
     static {
@@ -57,7 +49,6 @@ public class SungrowSimulatedPlant implements SungrowRealTimeSource {
         for (String serial : split(properties.getSimulationFaultSerials())) {
             faultySerials.add(serial);
         }
-        // formato: SERIAL:STRING:FATOR, por exemplo SN1:2:0.5 (a string 2 do SN1 produz so 50%)
         for (String item : split(properties.getSimulationWeakStrings())) {
             String[] parts = item.split(":");
             if (parts.length != 3) {
@@ -103,7 +94,6 @@ public class SungrowSimulatedPlant implements SungrowRealTimeSource {
         }
     }
 
-    /** 0 de noite; sobe de 6h a 12h e desce ate 18h. */
     private static double sun(int minuteOfDay) {
         double hour = minuteOfDay / 60.0;
         return hour <= 6 || hour >= 18 ? 0 : Math.sin(Math.PI * (hour - 6) / 12);
@@ -117,9 +107,9 @@ public class SungrowSimulatedPlant implements SungrowRealTimeSource {
         double weakFactor = weakStrings.getOrDefault(serial + ":" + stringNumber, 1.0);
         double noise = 1 + (new Random(31L * bucket + stringNumber).nextDouble() - 0.5) * 0.04;
         if (kind == 0) {
-            return (470 + 110 * sun) * (0.98 + 0.02 * stringFactor) * noise;   // tensao (V)
+            return (470 + 110 * sun) * (0.98 + 0.02 * stringFactor) * noise;
         }
-        return 10.5 * sun * stringFactor * weakFactor * noise;                     // corrente (A)
+        return 10.5 * sun * stringFactor * weakFactor * noise;
     }
 
     private static List<String> split(String csv) {

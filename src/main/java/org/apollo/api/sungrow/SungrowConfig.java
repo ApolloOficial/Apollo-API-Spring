@@ -8,14 +8,9 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.web.client.RestClient;
 
-/**
- * Liga as propriedades da Sungrow e, so quando apollo.sungrow.enabled=true, cria o RestClient.
- * Mesmo molde do ChatbotConfig (JDK HttpClient, timeout de conexao de 10 s).
- */
 @Configuration
 @EnableConfigurationProperties(SungrowProperties.class)
 public class SungrowConfig {
-
     @Bean
     @ConditionalOnSungrowLive
     RestClient sungrowRestClient(SungrowProperties properties) {

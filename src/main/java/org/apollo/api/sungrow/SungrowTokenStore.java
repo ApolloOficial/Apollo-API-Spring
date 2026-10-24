@@ -8,15 +8,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
-/**
- * Persistencia dos tokens. O token da Sungrow dura ~2 dias e o refresh token e SUBSTITUIDO a cada
- * renovacao; por isso ele fica no banco (sobrevive a reinicio) e a renovacao roda sob lock de linha
- * (withLock), para duas instancias da API nao renovarem ao mesmo tempo e perderem o token novo.
- */
 @Component
 @ConditionalOnSungrowLive
 public class SungrowTokenStore {
-
     private final JdbcTemplate jdbc;
     private final PlatformTransactionManager transactionManager;
 
@@ -48,7 +42,6 @@ public class SungrowTokenStore {
                 tokens.authorizedPlants());
     }
 
-    /** Roda a acao numa transacao com a linha dos tokens travada (SELECT ... FOR UPDATE). */
     public <T> T withLock(Supplier<T> action) {
         return new TransactionTemplate(transactionManager).execute(status -> {
             jdbc.queryForList("SELECT id FROM sungrow_credential WHERE id = 1 FOR UPDATE");

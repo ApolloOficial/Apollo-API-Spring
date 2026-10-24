@@ -9,16 +9,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-/**
- * Obtem e mantem o token de acesso: troca o codigo de autorizacao, entrega um token valido e renova
- * quando esta perto de vencer (ou quando a Sungrow o recusa).
- */
 @Service
 @ConditionalOnSungrowLive
 public class SungrowTokenService {
-
     private static final Logger log = LoggerFactory.getLogger(SungrowTokenService.class);
-    /** Usado so se a Sungrow nao informar expires_in. */
     private static final long DEFAULT_EXPIRES_IN_SECONDS = 3600;
 
     private final SungrowClient client;
@@ -38,7 +32,6 @@ public class SungrowTokenService {
         this.clock = clock;
     }
 
-    /** Primeira autorizacao: o dono da planta aprova e a Sungrow devolve o code no redirect_uri. */
     public SungrowTokens authorize(String code) {
         SungrowTokenResponse.TokenData data = client.exchangeCode(code);
         SungrowTokens tokens = toTokens(data, null);
@@ -51,7 +44,6 @@ public class SungrowTokenService {
         return store.find();
     }
 
-    /** Token valido para uso agora (renova se faltar pouco para vencer). Vazio = ainda nao autorizado. */
     public Optional<String> accessToken() {
         Optional<SungrowTokens> stored = store.find();
         if (stored.isEmpty()) {
@@ -63,10 +55,6 @@ public class SungrowTokenService {
         return Optional.of(refresh(stored.get().accessToken()));
     }
 
-    /**
-     * Renova o token. staleAccessToken e o token que acabou de falhar: se outra instancia ja salvou um
-     * token diferente e valido, ele e reaproveitado sem gastar o refresh token.
-     */
     public String refresh(String staleAccessToken) {
         return store.withLock(() -> {
             SungrowTokens stored = store.find()

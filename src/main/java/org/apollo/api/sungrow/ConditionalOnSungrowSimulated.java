@@ -7,7 +7,6 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 
-/** Beans usados so quando a integracao esta ligada E a planta e simulada (nada e lido da Sungrow). */
 @Target({ElementType.TYPE, ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented

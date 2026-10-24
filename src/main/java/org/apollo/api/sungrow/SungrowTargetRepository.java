@@ -9,15 +9,9 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
-/**
- * Quais inversores ler: marca contendo o texto configurado (apollo.sungrow.brand), inversor ATIVO, modelo
- * que mede corrente por string e pelo menos uma string ATIVA/em MANUTENCAO. O numero de serie do
- * inversor e a chave de ligacao com a Sungrow (device_sn).
- */
 @Repository
 @ConditionalOnProperty(prefix = "apollo.sungrow", name = "enabled", havingValue = "true")
 public class SungrowTargetRepository {
-
     private final JdbcTemplate jdbc;
 
     public SungrowTargetRepository(JdbcTemplate jdbc) {

@@ -23,7 +23,6 @@ import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestClient;
 
 class SungrowClientTest {
-
     private MockRestServiceServer server;
     private SungrowClient client;
 

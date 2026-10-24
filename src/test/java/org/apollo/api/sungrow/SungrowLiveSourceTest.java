@@ -16,7 +16,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class SungrowLiveSourceTest {
-
     private static final List<String> SERIALS = List.of("SN1");
     private static final List<String> POINTS = List.of("96", "70");
     private static final List<Map<String, Object>> DEVICES = List.of(Map.of("device_sn", "SN1"));

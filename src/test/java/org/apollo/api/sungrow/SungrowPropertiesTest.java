@@ -7,7 +7,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.junit.jupiter.api.Test;
 
 class SungrowPropertiesTest {
-
     private static SungrowProperties enabledWithCredentials() {
         SungrowProperties properties = new SungrowProperties();
         properties.setEnabled(true);

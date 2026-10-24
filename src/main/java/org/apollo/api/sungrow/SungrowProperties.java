@@ -3,16 +3,8 @@ package org.apollo.api.sungrow;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
-/**
- * Configuracao da integracao com a API aberta da Sungrow (iSolarCloud). Prefixo: apollo.sungrow.*
- * <p>
- * A integracao vem DESLIGADA por padrao (enabled=false): sem as credenciais do portal de
- * desenvolvedores a API sobe normalmente e nenhum bean da Sungrow e criado.
- */
 @ConfigurationProperties(prefix = "apollo.sungrow")
 public class SungrowProperties implements InitializingBean {
-
-    /** A Sungrow pede no minimo 5 minutos entre chamadas de dados em tempo real. */
     public static final long MIN_POLL_INTERVAL_SECONDS = 300;
 
     private boolean enabled = false;
@@ -26,15 +18,11 @@ public class SungrowProperties implements InitializingBean {
     private long initialDelaySeconds = 30;
     private String brand = "Sungrow";
     private String deviceTimeZone = "America/Sao_Paulo";
-    /** SENSOR = dado do inversor real; SIMULATOR = dado vindo de um servidor Sungrow simulado (demonstracao). */
     private String dataSource = "SENSOR";
-    /** live = planta real (API da Sungrow); simulated = planta simulada dentro da propria API. */
     private String plantMode = "live";
     private int simulationStepMinutes = 5;
     private boolean simulationAlwaysSun = false;
-    /** Numeros de serie, separados por virgula, que a planta simulada faz reportar falha. */
     private String simulationFaultSerials = "";
-    /** SERIAL:STRING:FATOR separados por virgula (ex.: SN1:2:0.5), strings que a planta simulada enfraquece. */
     private String simulationWeakStrings = "";
     private int batchSize = 20;
     private long tokenRefreshMarginSeconds = 600;
@@ -54,12 +42,10 @@ public class SungrowProperties implements InitializingBean {
             throw new IllegalStateException("apollo.sungrow.data-source must be SENSOR or SIMULATOR");
         }
         if (!isSimulated()) {
-            // A planta real exige as credenciais do aplicativo no portal de desenvolvedores da Sungrow.
             requireText("apollo.sungrow.appkey", appkey);
             requireText("apollo.sungrow.access-key", accessKey);
             requireText("apollo.sungrow.redirect-uri", redirectUri);
         }
-        // O minimo de 5 min protege a cota da API real; com dado simulado nao ha cota a proteger.
         if ("SENSOR".equals(effectiveDataSource()) && pollIntervalSeconds < MIN_POLL_INTERVAL_SECONDS) {
             throw new IllegalStateException("apollo.sungrow.poll-interval-seconds must be at least "
                     + MIN_POLL_INTERVAL_SECONDS + " (Sungrow refreshes real-time data every ~5 minutes)");
@@ -72,12 +58,10 @@ public class SungrowProperties implements InitializingBean {
         }
     }
 
-    /** Planta simulada (nada e lido da Sungrow). */
     public boolean isSimulated() {
         return "simulated".equals(plantMode);
     }
 
-    /** Valor gravado em data_source: planta simulada sempre grava SIMULATOR, nunca SENSOR. */
     public String effectiveDataSource() {
         return isSimulated() ? "SIMULATOR" : dataSource;
     }

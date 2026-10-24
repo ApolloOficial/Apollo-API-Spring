@@ -13,29 +13,24 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 class SungrowPointMapperTest {
-
     private static final ZoneId SAO_PAULO = ZoneId.of("America/Sao_Paulo");
 
     @Test
     void shouldMapVoltageAndCurrentPointsOfEachStringRange() {
-        // strings 1-16
         assertEquals(96, SungrowPointMapper.voltagePoint(1));
         assertEquals(70, SungrowPointMapper.currentPoint(1));
         assertEquals(111, SungrowPointMapper.voltagePoint(16));
         assertEquals(85, SungrowPointMapper.currentPoint(16));
-        // strings 17 e 18 tem pontos soltos
         assertEquals(112, SungrowPointMapper.voltagePoint(17));
         assertEquals(92, SungrowPointMapper.currentPoint(17));
         assertEquals(113, SungrowPointMapper.voltagePoint(18));
         assertEquals(93, SungrowPointMapper.currentPoint(18));
-        // strings 19-32
         assertEquals(7166, SungrowPointMapper.voltagePoint(19));
         assertEquals(313, SungrowPointMapper.currentPoint(19));
         assertEquals(7171, SungrowPointMapper.voltagePoint(24));
         assertEquals(318, SungrowPointMapper.currentPoint(24));
         assertEquals(7179, SungrowPointMapper.voltagePoint(32));
         assertEquals(326, SungrowPointMapper.currentPoint(32));
-        // strings 33-40: tensao nos impares, corrente nos pares
         assertEquals(7707, SungrowPointMapper.voltagePoint(33));
         assertEquals(7708, SungrowPointMapper.currentPoint(33));
         assertEquals(7721, SungrowPointMapper.voltagePoint(40));

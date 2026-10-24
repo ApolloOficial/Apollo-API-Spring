@@ -15,19 +15,11 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-/**
- * A cada apollo.sungrow.poll-interval-seconds (minimo 5 min) le na Sungrow a corrente e a tensao por
- * string dos inversores Sungrow ativos e grava via pr_ingest_string_measurement (data_source = SENSOR, ou
- * SIMULATOR quando a planta e simulada).
- * A procedure faz upsert por (string, measured_at), entao repetir a mesma leitura nao duplica linhas.
- */
 @Component
 @ConditionalOnProperty(prefix = "apollo.sungrow", name = "enabled", havingValue = "true")
 public class SungrowIngestionJob {
-
     private static final Logger log = LoggerFactory.getLogger(SungrowIngestionJob.class);
 
-    /** Resumo de uma rodada, usado nos logs e nos testes. */
     public record Result(int inverters, int readingsSaved, int readingsFailed) {
         static final Result EMPTY = new Result(0, 0, 0);
     }
@@ -56,7 +48,6 @@ public class SungrowIngestionJob {
                         result.inverters(), result.readingsSaved(), result.readingsFailed());
             }
         } catch (RuntimeException exception) {
-            // Uma rodada com erro nao pode derrubar o agendador: a proxima tenta de novo.
             log.error("Sungrow ingestion round failed: {}", exception.getMessage());
         }
     }
@@ -107,7 +98,6 @@ public class SungrowIngestionJob {
         return source.realTime(serials, SungrowPointMapper.pointIds(stringCount));
     }
 
-    /** Devolve {gravadas, falhas} do dispositivo. */
     private int[] saveDevice(Map<String, Object> device, Map<String, SungrowTarget> bySerial, ZoneId zone) {
         String serial = SungrowPointMapper.serialOf(device);
         SungrowTarget target = serial == null ? null : bySerial.get(serial);
