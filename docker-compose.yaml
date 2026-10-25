@@ -45,8 +45,15 @@ services:
       SUNGROW_PLANT_MODE: ${SUNGROW_PLANT_MODE:-live}
       SUNGROW_DATA_SOURCE: ${SUNGROW_DATA_SOURCE:-SENSOR}
       SUNGROW_POLL_INTERVAL_SECONDS: ${SUNGROW_POLL_INTERVAL_SECONDS:-300}
+      TRACKING_ENABLED: ${TRACKING_ENABLED:-false}
+      TRACKING_MONGO_URI: ${TRACKING_MONGO_URI:-${MONGODB_URI:-mongodb://localhost:27017}}
+      TRACKING_SPOOL_DIR: /var/lib/apollo/tracking-spool
+      TRACKING_FLUSH_DELAY_MS: ${TRACKING_FLUSH_DELAY_MS:-10000}
+    volumes:
+      - apollo_tracking_spool:/var/lib/apollo/tracking-spool
     ports:
       - "${API_PORT:-8080}:8080"
 
 volumes:
   apollo_postgres_data:
+  apollo_tracking_spool:

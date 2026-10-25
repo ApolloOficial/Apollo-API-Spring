@@ -181,6 +181,53 @@ class SecurityConfigTest {
                 });
     }
 
+    @Test
+    void trackingRequiresAuthentication() throws Exception {
+        mockMvc.perform(post("/api/tracking/events/batch")
+                        .contentType("application/json").content("{\"events\":[]}"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void sungrowRemainsAvailableToManagerAfterTrackingIntegration() throws Exception {
+        authenticate("sungrow-manager-token", "MANAGER");
+        mockMvc.perform(post("/api/v1/integrations/sungrow/authorization")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer sungrow-manager-token"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void sungrowRemainsRestrictedForTechnician() throws Exception {
+        authenticate("sungrow-technician-token", "TECHNICIAN");
+        mockMvc.perform(post("/api/v1/integrations/sungrow/authorization")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer sungrow-technician-token"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void sungrowStillRequiresAuthentication() throws Exception {
+        mockMvc.perform(post("/api/v1/integrations/sungrow/authorization"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void trackingAllowsAuthenticatedTechnician() throws Exception {
+        authenticate("tracking-token", "TECHNICIAN");
+        mockMvc.perform(post("/api/tracking/events/batch")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer tracking-token")
+                        .contentType("application/json").content("{\"events\":[]}"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void trackingRejectsInvalidToken() throws Exception {
+        when(jwtService.extractAuthentication("unknown-token"))
+                .thenThrow(new IllegalArgumentException("Invalid token"));
+        mockMvc.perform(post("/api/tracking/events/batch")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer unknown-token"))
+                .andExpect(status().isUnauthorized());
+    }
+
     private void authenticate(String token, String roleName) {
         String email = roleName.toLowerCase() + "@apollo.com";
         UUID userId = UUID.randomUUID();
@@ -209,5 +256,7 @@ class SecurityConfigTest {
     @RestController
     static class TestController {
         @RequestMapping("/api/v1/**") String any() { return "ok"; }
+        @org.springframework.web.bind.annotation.PostMapping("/api/tracking/events/batch")
+        String tracking() { return "ok"; }
     }
 }

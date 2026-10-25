@@ -1,0 +1,210 @@
+{
+  "$jsonSchema": {
+    "bsonType": "object",
+    "required": [
+      "event_id",
+      "event_name",
+      "user_id",
+      "company_id",
+      "session_id",
+      "screen",
+      "timestamp",
+      "received_at",
+      "platform",
+      "source",
+      "schema_version",
+      "properties"
+    ],
+    "additionalProperties": false,
+    "properties": {
+      "_id": {
+        "bsonType": "objectId"
+      },
+      "event_id": {
+        "bsonType": "string",
+        "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+      },
+      "event_name": {
+        "enum": [
+          "app_opened",
+          "screen_viewed",
+          "work_order_viewed",
+          "work_order_start_clicked",
+          "barcode_scanned",
+          "report_started",
+          "action_failed",
+          "app_foregrounded",
+          "app_backgrounded",
+          "screen_exited",
+          "ui_action",
+          "repeated_action",
+          "form_started",
+          "form_submitted",
+          "form_succeeded",
+          "form_abandoned",
+          "validation_failed",
+          "filter_changed",
+          "search_completed",
+          "empty_state_viewed",
+          "retry_clicked",
+          "feedback_shown",
+          "permission_result",
+          "api_request_completed",
+          "api_request_failed",
+          "work_order_started",
+          "report_submitted",
+          "work_order_completed"
+        ]
+      },
+      "user_id": {
+        "bsonType": "string",
+        "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+      },
+      "company_id": {
+        "bsonType": [
+          "long",
+          "int"
+        ]
+      },
+      "session_id": {
+        "bsonType": "string",
+        "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+      },
+      "screen": {
+        "bsonType": "string",
+        "pattern": "^[A-Za-z][A-Za-z0-9_]{0,79}$"
+      },
+      "timestamp": {
+        "bsonType": "date"
+      },
+      "received_at": {
+        "bsonType": "date"
+      },
+      "platform": {
+        "enum": [
+          "android",
+          "api"
+        ]
+      },
+      "source": {
+        "enum": [
+          "android",
+          "api"
+        ]
+      },
+      "schema_version": {
+        "bsonType": "int",
+        "enum": [
+          1
+        ]
+      },
+      "properties": {
+        "bsonType": "object",
+        "maxProperties": 16,
+        "additionalProperties": false,
+        "properties": {
+          "work_order_id": {
+            "bsonType": "string",
+            "maxLength": 128
+          },
+          "maintenance_type_id": {
+            "bsonType": "string",
+            "maxLength": 128
+          },
+          "action": {
+            "bsonType": "string",
+            "maxLength": 128
+          },
+          "error_type": {
+            "bsonType": "string",
+            "maxLength": 128
+          },
+          "input_method": {
+            "bsonType": "string",
+            "maxLength": 128
+          },
+          "previous_screen": {
+            "bsonType": "string",
+            "maxLength": 128
+          },
+          "duration_ms": {
+            "bsonType": "string",
+            "maxLength": 128
+          },
+          "exit_reason": {
+            "bsonType": "string",
+            "maxLength": 128
+          },
+          "form_id": {
+            "bsonType": "string",
+            "maxLength": 128
+          },
+          "field": {
+            "bsonType": "string",
+            "maxLength": 128
+          },
+          "rule": {
+            "bsonType": "string",
+            "maxLength": 128
+          },
+          "target": {
+            "bsonType": "string",
+            "maxLength": 128
+          },
+          "attempts": {
+            "bsonType": "string",
+            "maxLength": 128
+          },
+          "filter_name": {
+            "bsonType": "string",
+            "maxLength": 128
+          },
+          "filter_value": {
+            "bsonType": "string",
+            "maxLength": 128
+          },
+          "query_length": {
+            "bsonType": "string",
+            "maxLength": 128
+          },
+          "result_count": {
+            "bsonType": "string",
+            "maxLength": 128
+          },
+          "state": {
+            "bsonType": "string",
+            "maxLength": 128
+          },
+          "feedback_type": {
+            "bsonType": "string",
+            "maxLength": 128
+          },
+          "permission": {
+            "bsonType": "string",
+            "maxLength": 128
+          },
+          "granted": {
+            "bsonType": "string",
+            "maxLength": 128
+          },
+          "http_status": {
+            "bsonType": "string",
+            "maxLength": 128
+          },
+          "method": {
+            "bsonType": "string",
+            "maxLength": 128
+          },
+          "endpoint": {
+            "bsonType": "string",
+            "maxLength": 128
+          },
+          "error_code": {
+            "bsonType": "string",
+            "maxLength": 128
+          }
+        }
+      }
+    }
+  }
+}
