@@ -16,7 +16,9 @@ WORKDIR /app
 
 COPY --from=build /app/target/Apollo-API-Spring-0.0.1-SNAPSHOT.jar app.jar
 
-RUN useradd --system --no-create-home apollo
+RUN useradd --system --user-group --no-create-home apollo \
+    && install -d -o apollo -g apollo /var/lib/apollo/tracking-spool
+ENV TRACKING_SPOOL_DIR=/var/lib/apollo/tracking-spool
 USER apollo
 
 EXPOSE 8080

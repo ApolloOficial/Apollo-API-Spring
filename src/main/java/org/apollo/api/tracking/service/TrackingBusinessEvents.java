@@ -103,7 +103,7 @@ public class TrackingBusinessEvents {
         }
     }
 
-    @Scheduled(fixedDelayString = "${apollo.tracking.flush-delay-ms:10000}")
+    @Scheduled(fixedDelayString = "${apollo.tracking.flush-delay-ms:10000}", scheduler = "trackingTaskScheduler")
     public void flush() {
         if (!enabled || !Files.isDirectory(directory)) return;
         TrackingRepository repository = repositories.getIfAvailable();

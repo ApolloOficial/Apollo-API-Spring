@@ -9,13 +9,11 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.data.mongodb.core.MongoTemplate;
 
 import java.util.concurrent.TimeUnit;
 
 @Configuration
-@EnableScheduling
 public class MongoTrackingConfig {
     @Bean
     org.springframework.boot.ApplicationRunner trackingStatus(
