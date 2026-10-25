@@ -18,7 +18,7 @@ public class MongoTrackingConfig {
     @Bean
     org.springframework.boot.ApplicationRunner trackingStatus(
             @Value("${apollo.tracking.enabled:false}") boolean enabled,
-            @Value("${apollo.tracking.database}") String database,
+            @Value("${apollo.tracking.database:apollo_analytics}") String database,
             @Value("${apollo.tracking.collection:tracking_events}") String collection) {
         return args -> org.slf4j.LoggerFactory.getLogger(MongoTrackingConfig.class)
                 .info("Tracking configuration: enabled={}, database={}, collection={}",
@@ -27,7 +27,7 @@ public class MongoTrackingConfig {
 
     @Bean(destroyMethod = "close")
     @ConditionalOnProperty(name = "apollo.tracking.enabled", havingValue = "true")
-    MongoClient trackingMongoClient(@Value("${apollo.tracking.mongo-uri}") String uri) {
+    MongoClient trackingMongoClient(@Value("${apollo.tracking.mongo-uri:mongodb://localhost:27017}") String uri) {
         return MongoClients.create(MongoClientSettings.builder()
                 .applyConnectionString(new ConnectionString(uri))
                 .applyToClusterSettings(b -> b.serverSelectionTimeout(3, TimeUnit.SECONDS))
@@ -40,7 +40,7 @@ public class MongoTrackingConfig {
     @Bean
     @ConditionalOnProperty(name = "apollo.tracking.enabled", havingValue = "true")
     MongoTemplate trackingMongoTemplate(MongoClient trackingMongoClient,
-                                       @Value("${apollo.tracking.database}") String database) {
+                                       @Value("${apollo.tracking.database:apollo_analytics}") String database) {
         return new MongoTemplate(trackingMongoClient, database);
     }
 }

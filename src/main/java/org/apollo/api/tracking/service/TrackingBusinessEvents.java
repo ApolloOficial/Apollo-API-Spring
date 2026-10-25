@@ -35,7 +35,7 @@ public class TrackingBusinessEvents {
     private final boolean enabled;
 
     public TrackingBusinessEvents(TenantContext tenant, ObjectProvider<TrackingRepository> repositories,
-                                  @Value("${apollo.tracking.spool-dir}") String directory,
+                                  @Value("${apollo.tracking.spool-dir:./var/tracking-spool}") String directory,
                                   @Value("${apollo.tracking.enabled:false}") boolean enabled) {
         this.tenant = tenant;
         this.repositories = repositories;
