@@ -129,6 +129,17 @@ public class DbProcedures {
                 companyId, threshold);
     }
 
+
+    public void ingestStringMeasurement(String inverterSerial, int mpptNumber, int entryNumber,
+                                        OffsetDateTime measuredAt, BigDecimal powerW, BigDecimal voltageV,
+                                        BigDecimal currentA, BigDecimal generatedEnergyKwh, String faultCode,
+                                        String dataSource) {
+        jdbc.update("CALL pr_ingest_string_measurement(?::varchar, ?::smallint, ?::smallint, ?::timestamptz, "
+                        + "?::numeric, ?::numeric, ?::numeric, ?::numeric, ?::varchar, ?::varchar)",
+                inverterSerial, mpptNumber, entryNumber, measuredAt, powerW, voltageV, currentA,
+                generatedEnergyKwh, faultCode, dataSource);
+    }
+
     // ---------------------------------------------------------------- auditoria de acesso
 
     /** pr_register_access: registra login (SUCESSO/FALHA) na tabela access_log. */
