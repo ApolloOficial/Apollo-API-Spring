@@ -1,79 +1,47 @@
-# Resumo
+#### Descrição
 
-<!-- Descreva brevemente o objetivo desta PR. -->
+<!-- Escreva uma breve explicação do que foi feito na branch -->
 
-**Issue/Tarefa:** #
+---
 
-## Alterações
+#### Tipo de alteração
 
-<!-- Liste as principais alterações realizadas. -->
+<!--
+Apague as opções que não se aplicam a esse PR e preencha a descrição ao lado da que você manteve:
 
--
--
--
+`feat`: Adição de uma nova funcionalidade
+`fix`: Correção de um bug
+`docs`: Alteração apenas de documentação (README, comentários, etc.)
+`style`: Formatação, espaçamento, ponto e vírgula — sem mudança de lógica
+`refactor`: Reestruturação de código que não corrige bug nem adiciona funcionalidade
+`perf`: Alteração que melhora performance
+`test`: Adição ou correção de testes
+`build`: Mudanças que afetam o build ou dependências externas (ex: package.json)
+`ci`: Mudanças em arquivos e scripts de configuração de CI
+`chore`: Tarefas de manutenção que não alteram código de produção (ex: configs, scripts)
+`revert`: Reversão de um commit anterior
+-->
 
-## API
+`x`: descrição
 
-<!-- Preencha apenas se aplicável. -->
+---
 
-- Endpoint(s):
-- Entidade(s):
-- Regra(s) de negócio:
+#### Checklist
 
-### Camadas alteradas
+<!-- Preencha com ✅ ou ❌. Se não se aplica a este PR, escreva N/A. -->
 
-> Marque os itens alterados substituindo `⬜` por `✅`.
+- [ ] Validei entradas, respostas HTTP e regras de negócio alteradas
+- [ ] Verifiquei autenticação e permissões dos perfis afetados
+- [ ] Conferi contratos usados pelo Web e Mobile
+- [ ] Validei alterações no PostgreSQL, procedures ou integrações, quando aplicável
+- [ ] Executei os testes aplicáveis e registrei comandos e resultados nas observações
+- [ ] Não incluí credenciais nem dados sensíveis em código, logs ou evidências
+- [ ] Atualizei a documentação quando houve mudança de uso ou configuração
+- [ ] Commits seguem Conventional Commits e a branch possui nome em inglês
 
-- ⬜ Controller
-- ⬜ Service
-- ⬜ Repository
-- ⬜ Entity
-- ⬜ DTO
-- ⬜ Exception Handler
-- ⬜ Configuração
+---
 
-## Banco e Integrações
+#### Observações
 
-> Marque apenas o que foi alterado substituindo `⬜` por `✅`.
+<!-- Informe evidências de validação, dependências ou pontos de atenção. Remova a seção quando não se aplicar. -->
 
-- ⬜ Entidades JPA / PostgreSQL
-- ⬜ Migration SQL
-- ⬜ Procedure / Function
-- ⬜ Swagger/OpenAPI
-- ⬜ Spring Security
-- ⬜ NoSQL
-- ⬜ Não se aplica
-
-## Testes
-
-> Marque o que foi validado substituindo `⬜` por `✅`.
-
-- ⬜ Testes unitários
-- ⬜ Testes de integração
-- ⬜ Teste manual
-- ⬜ Cenários de sucesso e erro
-- ⬜ Não se aplica
-
-## Impacto
-
-> Marque os impactos aplicáveis substituindo `⬜` por `✅`.
-
-- ⬜ Front-end
-- ⬜ Banco de dados
-- ⬜ Documentação (Swagger/OpenAPI)
-- ⬜ Infraestrutura/Configuração
-- ⬜ Não há impacto externo
-
-## Checklist
-
-> Marque os itens concluídos substituindo `⬜` por `✅`.
-
-- ⬜ Código segue a arquitetura do projeto
-- ⬜ Entradas da API possuem validação adequada
-- ⬜ Exceções retornam respostas HTTP apropriadas
-- ⬜ Documentação (Swagger/OpenAPI) atualizada, quando necessário
-- ⬜ Não há secrets, credenciais ou dados sensíveis versionados
-
-## Observações
-
-<!-- Informe pontos de atenção para o revisor ou dependências desta PR. -->
