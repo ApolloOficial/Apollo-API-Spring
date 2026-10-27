@@ -22,7 +22,7 @@ cadastrados no Apollo e gravá-las em `string_performance_measurement` (via `pr_
 
 Como ligar:
 
-1. Crie a tabela `sungrow_credential` (está em `db/schema.sql`) no banco que a API usa.
+1. Crie a tabela `sungrow_credential` no banco que a API usa.
 2. Defina as variáveis acima (nunca versione `appkey`/`access key`) e suba a API.
 3. O dono da planta autoriza o aplicativo na iSolarCloud; a Sungrow redireciona para o `redirect_uri` com `?code=...`.
 4. Um **Gerente** envia o código: `POST /api/v1/integrations/sungrow/authorization` com `{"code": "..."}`.
