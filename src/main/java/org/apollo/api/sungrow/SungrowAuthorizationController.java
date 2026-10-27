@@ -9,7 +9,6 @@ import java.time.Instant;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -46,13 +45,6 @@ public class SungrowAuthorizationController {
             throw new ResponseStatusException(HttpStatus.BAD_GATEWAY,
                     "Sungrow rejected the authorization code (" + exception.getCode() + ")");
         }
-    }
-
-    @GetMapping("/status")
-    @Operation(summary = "Tell whether the Sungrow integration is authorized (never returns the tokens)")
-    public AuthorizationStatus status() {
-        return tokens.current().map(SungrowAuthorizationController::status)
-                .orElse(new AuthorizationStatus(false, null, null));
     }
 
     private static AuthorizationStatus status(SungrowTokens tokens) {

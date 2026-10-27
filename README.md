@@ -179,11 +179,14 @@ cadastrados no Apollo e gravá-las em `string_performance_measurement` (via `pr_
 
 Como ligar:
 
-1. Crie a tabela `sungrow_credential` (está em `db/schema.sql`) no banco que a API usa.
+1. Confirme que a tabela `sungrow_credential` existe no banco que a API usa (Neon).
 2. Defina as variáveis acima (nunca versione `appkey`/`access key`) e suba a API.
 3. O dono da planta autoriza o aplicativo na iSolarCloud; a Sungrow redireciona para o `redirect_uri` com `?code=...`.
-4. Um **Gerente** envia o código: `POST /api/v1/integrations/sungrow/authorization` com `{"code": "..."}`.
-   `GET /api/v1/integrations/sungrow/status` mostra se está autorizado (os tokens nunca são devolvidos).
+4. Um **Gerente** envia o código: `POST /api/v1/integrations/sungrow/authorization` com `{"code": "..."}`
+   (o front faz isso na rota `/integrations/sungrow/callback`; use essa rota do front como `SUNGROW_REDIRECT_URI`).
+   `GET /api/v1/integrations/sungrow/status` (Gerente e Operador, em qualquer modo) devolve
+   `{enabled, mode, authorized, accessTokenExpiresAt, authorizedPlants}`, com `mode` = `DISABLED`, `SIMULATED` ou `LIVE`
+   (os tokens nunca são devolvidos; `authorized` só vale em `LIVE`).
 5. A cada intervalo a API lê os inversores Sungrow **ativos** (a chave é `inverter.serial_number` = `device_sn`)
    e grava só as strings **ativas** (`ATIVA`/`MANUTENCAO`).
 

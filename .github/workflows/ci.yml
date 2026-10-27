@@ -10,21 +10,6 @@ jobs:
   build-and-test:
     runs-on: ubuntu-latest
 
-    services:
-      postgres:
-        image: postgres:17.9
-        env:
-          POSTGRES_USER: apollo
-          POSTGRES_PASSWORD: apollo123
-          POSTGRES_DB: dbapollo
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
     steps:
       - name: Checkout
         uses: actions/checkout@v7.0.0
@@ -36,16 +21,5 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
-      - name: Carregar schema real (tabelas, views, procedures, triggers)
-        env:
-          PGPASSWORD: apollo123
-        run: psql -v ON_ERROR_STOP=1 -h localhost -U apollo -d dbapollo -f db/schema.sql
-
       - name: Build e testes
-        env:
-          DB_HOST: localhost
-          DB_PORT: 5432
-          DB_NAME: dbapollo
-          DB_USER: apollo
-          DB_PASSWORD: apollo123
         run: mvn --batch-mode --update-snapshots verify
