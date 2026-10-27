@@ -145,6 +145,7 @@ public class SecurityConfig {
                         // Busca global.
                         .requestMatchers(HttpMethod.GET, "/api/v1/search/**").hasAnyRole(MANAGER, OPERATOR, ANALYST)
 
+                        .requestMatchers(HttpMethod.GET, "/api/v1/integrations/sungrow/status").hasAnyRole(MANAGER, OPERATOR)
                         .requestMatchers("/api/v1/integrations/sungrow/**").hasRole(MANAGER)
 
                         // ==========================================================================

@@ -11,8 +11,6 @@ services:
       - "${DB_PORT:-5432}:5432"
     volumes:
       - apollo_postgres_data:/var/lib/postgresql/data
-      # schema completo na primeira subida do volume (banco vazio)
-      - ./db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 10s
