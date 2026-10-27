@@ -31,6 +31,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.apollo.api.tracking.service.TrackingBusinessEvents;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -56,6 +57,7 @@ public class MaintenanceRegisterService {
     private final EntityManager entityManager;
     private final DbProcedures procedures;
     private final TenantContext tenantContext;
+    private final TrackingBusinessEvents tracking;
 
     @Transactional(readOnly = true)
     public Page<MaintenanceRegisterDTO> findAll(Long id, UUID technicianId, Long maintenanceTypeId,
@@ -136,7 +138,9 @@ public class MaintenanceRegisterService {
         MaintenanceRegister register = findRegister(id);
         requireAssignedTechnician(register);
         procedures.startMaintenance(id, tenantContext.getUserId());
-        return reload(id);
+        MaintenanceRegisterDTO result = reload(id);
+        tracking.afterCommit("work_order_started", id, result.maintenanceTypeId());
+        return result;
     }
 
     /** Tecnico responsavel conclui a OS com o laudo tecnico. */
@@ -144,7 +148,10 @@ public class MaintenanceRegisterService {
         MaintenanceRegister register = findRegister(id);
         requireAssignedTechnician(register);
         procedures.completeMaintenance(id, tenantContext.getUserId(), dto.technicalReport(), dto.laborCost());
-        return reload(id);
+        MaintenanceRegisterDTO result = reload(id);
+        tracking.afterCommit("report_submitted", id, result.maintenanceTypeId());
+        tracking.afterCommit("work_order_completed", id, result.maintenanceTypeId());
+        return result;
     }
 
     /** Operador cancela a OS informando o motivo. */

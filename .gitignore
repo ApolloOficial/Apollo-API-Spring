@@ -32,3 +32,6 @@ build/
 
 ### VS Code ###
 .vscode
+
+# Pending analytics delivery; contains runtime events.
+/var/tracking-spool/

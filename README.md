@@ -327,3 +327,18 @@ informações.
 Desenvolvido pela equipe **Apollo** para o Projeto Interdisciplinar 2026. 🚀
 
 </div>
+
+## Event tracking (MongoDB)
+
+A API recebe eventos de uso do app em `POST /api/tracking/events/batch` (autenticado) e grava no MongoDB, separado do PostgreSQL. Vem **desligado** por padrão.
+
+| Variável | Padrão | Descrição |
+|---|---|---|
+| `TRACKING_ENABLED` | `false` | Liga o tracking |
+| `TRACKING_MONGO_URI` | `MONGODB_URI` ou `mongodb://localhost:27017` | URI do MongoDB (nunca versione credenciais) |
+| `TRACKING_SPOOL_DIR` | `./var/tracking-spool` (no Docker: `/var/lib/apollo/tracking-spool`) | Fila em disco para reenviar eventos de negócio |
+| `TRACKING_FLUSH_DELAY_MS` | `10000` | Intervalo do reenvio da fila |
+
+- O reenvio roda num agendador próprio (`trackingTaskScheduler`), para que uma demora no Mongo não atrase a ingestão da Sungrow nem o envio de push.
+- No Docker Compose, a fila fica no volume `apollo_tracking_spool`.
+- Configuração da collection e do validator: ver `APOLLO_MONGODB_SETUP.md` e `tracking-validator.json`.

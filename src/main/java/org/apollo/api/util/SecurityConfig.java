@@ -78,6 +78,7 @@ public class SecurityConfig {
                         .requestMatchers(swaggerEnabled
                                 ? new String[] {"/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**", "/v3/api-docs.yaml"}
                                 : new String[] {"/__swagger-disabled__"}).permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/tracking/events/batch").authenticated()
 
                         // ==========================================================================
                         //  2. DADOS DE REFERENCIA / CADASTROS (somente leitura para todos os perfis)
