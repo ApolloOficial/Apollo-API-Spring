@@ -22,9 +22,14 @@ A Apollo API centraliza as operações utilizadas pelo Web e Mobile. Desenvolvid
 - **Integrações:** gateway do chatbot, Sungrow, notificações Firebase e tracking em MongoDB possuem configurações próprias.
 
 ```text
-Web / Mobile → segurança → controller → service → PostgreSQL
-                                         → integrações externas
+Web / Mobile → filtro de segurança (JWT) → controller → service → repository → PostgreSQL
+                                                       ├→ gateway ApolloAI
+                                                       ├→ integração Sungrow
+                                                       ├→ notificações Firebase
+                                                       └→ tracking → MongoDB
 ```
+
+Os controllers recebem e validam as requisições, os services aplicam as operações do domínio, e os repositories acessam os dados relacionais. As integrações são chamadas a partir dos serviços correspondentes.
 
 ## Início rápido
 
@@ -59,7 +64,17 @@ No Linux/macOS, use `./mvnw spring-boot:run`. A porta padrão é 8080. Configure
 
 Os controllers abrangem autenticação, empresas, filiais, funcionários, painéis, inversores, strings, estoque, alertas, manutenções, realocações e configurações.
 
-A documentação OpenAPI depende de `SWAGGER_ENABLED`. Consulte a configuração e os controllers para os contratos atuais. O gateway do chatbot utiliza `CHATBOT_BASE_URL` e `CHATBOT_API_TOKEN`.
+A documentação OpenAPI depende de `SWAGGER_ENABLED`. Exemplos de rotas implementadas:
+
+| Método | Rota | Uso |
+|---|---|---|
+| `POST` | `/api/v1/auth/login` | Autentica o usuário |
+| `GET` | `/api/v1/panels/barcode/{barcode}` | Consulta uma placa pelo código |
+| `POST` | `/api/v1/chat/messages` | Envia mensagem ao ApolloAI |
+| `PATCH` | `/api/v1/maintenance-registers/{id}/start` | Inicia uma ordem de serviço |
+| `GET` | `/api/v1/maintenance-registers/{id}/chain` | Consulta a sequência de uma ordem de serviço |
+
+O gateway do chatbot utiliza `CHATBOT_BASE_URL` e `CHATBOT_API_TOKEN`. Consulte os controllers para os parâmetros, permissões e contratos completos.
 
 Tracking em MongoDB e Sungrow são ativados por `TRACKING_ENABLED` e `SUNGROW_ENABLED`. As integrações possuem requisitos adicionais descritos no guia.
 
