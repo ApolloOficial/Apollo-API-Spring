@@ -29,7 +29,7 @@ public class MaintenanceRegisterController {
 
     private final MaintenanceRegisterService service;
 
-    public enum SortField { id, openingDt, dueDate, concludedAt, maintenanceStatus }
+    public enum SortField { id, openingDt, dueDate, startedAt, concludedAt, maintenanceStatus }
 
     @GetMapping
     @Operation(summary = "List maintenance orders (paginated) with optional filters")

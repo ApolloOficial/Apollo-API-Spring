@@ -55,6 +55,9 @@ public class MaintenanceRegister {
     @Column(name = "due_date")
     private LocalDateTime dueDate;
 
+    @Column(name = "started_at")
+    private LocalDateTime startedAt;
+
     @Column(name = "concluded_at")
     private LocalDateTime concludedAt;
 

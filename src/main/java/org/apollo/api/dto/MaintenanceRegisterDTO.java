@@ -13,7 +13,8 @@ public record MaintenanceRegisterDTO(Long id, Long parentMaintenanceId, Long war
                                      String maintenanceTypeName, UUID technicianId, String technicianName,
                                      UUID createdById, String technicalReport,
                                      MaintenanceStatusEnum maintenanceStatus, boolean overdue,
-                                     LocalDateTime openingDt, LocalDateTime dueDate, LocalDateTime concludedAt,
+                                     LocalDateTime openingDt, LocalDateTime dueDate, LocalDateTime startedAt,
+                                     LocalDateTime concludedAt,
                                      LocalDateTime cancelledAt, String cancellationReason,
                                      BigDecimal estimatedCost, BigDecimal laborCost, BigDecimal partsCost,
                                      BigDecimal totalCost) {

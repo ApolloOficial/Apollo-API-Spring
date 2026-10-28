@@ -81,6 +81,7 @@ public class DbProcedures {
 
     public void startMaintenance(Long maintenanceId, UUID technicianId) {
         jdbc.update("CALL pr_start_maintenance(?::bigint, ?::uuid)", maintenanceId, technicianId);
+        jdbc.update("UPDATE maintenance_register SET started_at = now() WHERE id = ? AND started_at IS NULL", maintenanceId);
     }
 
     public void completeMaintenance(Long maintenanceId, UUID technicianId, String report, BigDecimal laborCost) {
