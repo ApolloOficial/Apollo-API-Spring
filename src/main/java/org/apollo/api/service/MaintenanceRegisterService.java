@@ -277,7 +277,7 @@ public class MaintenanceRegisterService {
                 m.getMaintenanceType().getId(), m.getMaintenanceType().getName(),
                 m.getTechnician().getId(), m.getTechnician().getFullName(), m.getCreatedBy().getId(),
                 m.getTechnicalReport(), m.getMaintenanceStatus(), overdue, m.getOpeningDt(), m.getDueDate(),
-                m.getConcludedAt(), m.getCancelledAt(), m.getCancellationReason(), m.getEstimatedCost(),
+                m.getStartedAt(), m.getConcludedAt(), m.getCancelledAt(), m.getCancellationReason(), m.getEstimatedCost(),
                 m.getLaborCost(), partsCost, labor.add(partsCost));
     }
 
