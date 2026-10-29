@@ -38,12 +38,13 @@ public class WarningService {
     private final TenantContext tenantContext;
 
     public Page<WarningDTO> findAll(PriorityEnum severity, WarningTypeEnum type, WarningStatusEnum status,
-                                    UUID companyUnitId, UUID stringId, Long panelId, Pageable pageable) {
+                                    boolean excludeResolved, UUID companyUnitId, UUID stringId, Long panelId, Pageable pageable) {
         Specification<Warning> spec = Specification
                 .where(inCompany(companyId()))
                 .and(Specs.<Warning>equalTo(w -> w.get("severity"), severity))
                 .and(Specs.<Warning>equalTo(w -> w.get("type"), type))
                 .and(Specs.<Warning>equalTo(w -> w.get("status"), status))
+                .and(excludeResolved ? unresolved() : Specs.<Warning>none())
                 .and(companyUnitId == null ? Specs.<Warning>none() : inUnit(companyUnitId))
                 .and(stringId == null ? Specs.<Warning>none() : forString(stringId))
                 .and(Specs.<Warning>equalTo(w -> w.get("panel").get("id"), panelId));
@@ -65,6 +66,10 @@ public class WarningService {
         Warning warning = warningRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Warning not found: " + id));
         return toDTO(warning, maintenanceIds(List.of(warning)).get(warning.getId()));
+    }
+
+    private Specification<Warning> unresolved() {
+        return (root, query, cb) -> cb.notEqual(root.get("status"), WarningStatusEnum.RESOLVIDO);
     }
 
     private Specification<Warning> inCompany(Long companyId) {
