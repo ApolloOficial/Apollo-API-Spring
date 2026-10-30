@@ -169,6 +169,35 @@ class AuthServiceTest {
         assertEquals("generated-token", response.getToken());
     }
 
+    @Test
+    void shouldDenyWebAccessForTechnician() {
+        AuthUser technician = mock(AuthUser.class);
+        when(technician.getRole()).thenReturn(new Roles(4L, "TECNICO", null));
+        when(authUserRepository.findActiveByEmail("tech@apollo.com")).thenReturn(List.of(technician));
+
+        ResponseStatusException exception = assertThrows(ResponseStatusException.class,
+                () -> authService.ensureWebAccess("tech@apollo.com"));
+
+        assertEquals(HttpStatus.FORBIDDEN, exception.getStatusCode());
+        verify(dbProcedures).registerAccess(eq("tech@apollo.com"), any(UUID.class), any(), eq("FALHA"));
+    }
+
+    @Test
+    void shouldAllowWebAccessForNonTechnician() {
+        AuthUser manager = mock(AuthUser.class);
+        when(manager.getRole()).thenReturn(new Roles(1L, "GERENTE", null));
+        when(authUserRepository.findActiveByEmail("admin@apollo.com")).thenReturn(List.of(manager));
+
+        authService.ensureWebAccess("admin@apollo.com");
+    }
+
+    @Test
+    void shouldAllowWebAccessCheckForUnknownEmail() {
+        when(authUserRepository.findActiveByEmail("ghost@apollo.com")).thenReturn(List.of());
+
+        authService.ensureWebAccess("ghost@apollo.com");
+    }
+
     private AuthUser authenticatedUser() {
         AuthUser user = mock(AuthUser.class);
         when(user.getUserId()).thenReturn(UUID.fromString("00000000-0000-0000-0000-000000000001"));
