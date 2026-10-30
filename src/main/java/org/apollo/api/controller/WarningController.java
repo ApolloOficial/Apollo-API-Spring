@@ -38,6 +38,7 @@ public class WarningController {
             @RequestParam(required = false) PriorityEnum severity,
             @RequestParam(required = false) WarningTypeEnum type,
             @RequestParam(required = false) WarningStatusEnum status,
+            @RequestParam(defaultValue = "false") boolean openOnly,
             @RequestParam(required = false) UUID companyUnitId,
             @RequestParam(required = false) UUID stringId,
             @RequestParam(required = false) Long panelId,
@@ -45,7 +46,7 @@ public class WarningController {
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(defaultValue = "generationDt") SortField sortBy,
             @RequestParam(defaultValue = "DESC") Sort.Direction direction) {
-        return warningService.findAll(severity, type, status, companyUnitId, stringId, panelId,
+        return warningService.findAll(severity, type, status, openOnly, companyUnitId, stringId, panelId,
                 PageParams.of(page, size, direction, sortBy.name()));
     }
 

@@ -2,13 +2,18 @@ package org.apollo.api.service;
 
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.Subquery;
 import lombok.RequiredArgsConstructor;
 import org.apollo.api.dto.WarningDTO;
+import org.apollo.api.enums.MaintenanceStatusEnum;
 import org.apollo.api.enums.PriorityEnum;
 import org.apollo.api.enums.WarningStatusEnum;
 import org.apollo.api.enums.WarningTypeEnum;
 import org.apollo.api.exception.ResourceNotFoundException;
 import org.apollo.api.model.Inverter;
+import org.apollo.api.model.MaintenanceRegister;
 import org.apollo.api.model.Panel;
 import org.apollo.api.model.PanelString;
 import org.apollo.api.model.Warning;
@@ -38,12 +43,13 @@ public class WarningService {
     private final TenantContext tenantContext;
 
     public Page<WarningDTO> findAll(PriorityEnum severity, WarningTypeEnum type, WarningStatusEnum status,
-                                    UUID companyUnitId, UUID stringId, Long panelId, Pageable pageable) {
+                                    boolean openOnly, UUID companyUnitId, UUID stringId, Long panelId, Pageable pageable) {
         Specification<Warning> spec = Specification
                 .where(inCompany(companyId()))
                 .and(Specs.<Warning>equalTo(w -> w.get("severity"), severity))
                 .and(Specs.<Warning>equalTo(w -> w.get("type"), type))
                 .and(Specs.<Warning>equalTo(w -> w.get("status"), status))
+                .and(openOnly ? open() : Specs.<Warning>none())
                 .and(companyUnitId == null ? Specs.<Warning>none() : inUnit(companyUnitId))
                 .and(stringId == null ? Specs.<Warning>none() : forString(stringId))
                 .and(Specs.<Warning>equalTo(w -> w.get("panel").get("id"), panelId));
@@ -65,6 +71,21 @@ public class WarningService {
         Warning warning = warningRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Warning not found: " + id));
         return toDTO(warning, maintenanceIds(List.of(warning)).get(warning.getId()));
+    }
+
+    private Specification<Warning> open() {
+        return (root, query, cb) -> {
+            Predicate notResolved = cb.notEqual(root.get("status"), WarningStatusEnum.RESOLVIDO);
+            if (query == null) {
+                return notResolved;
+            }
+            Subquery<Long> cancelled = query.subquery(Long.class);
+            Root<MaintenanceRegister> maintenance = cancelled.from(MaintenanceRegister.class);
+            cancelled.select(maintenance.get("id")).where(
+                    cb.equal(maintenance.get("warning").get("id"), root.get("id")),
+                    cb.equal(maintenance.get("maintenanceStatus"), MaintenanceStatusEnum.CANCELADA));
+            return cb.and(notResolved, cb.not(cb.exists(cancelled)));
+        };
     }
 
     private Specification<Warning> inCompany(Long companyId) {
