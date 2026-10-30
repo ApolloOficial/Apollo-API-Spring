@@ -8,6 +8,7 @@ import org.apollo.api.exception.BusinessRuleException;
 import org.apollo.api.model.Employee;
 import org.apollo.api.repository.AuthUserRepository;
 import org.apollo.api.repository.EmployeeRepository;
+import org.apollo.api.security.AuthUser;
 import org.apollo.api.security.AuthenticatedUser;
 import org.apollo.api.util.DbProcedures;
 import org.springframework.http.HttpStatus;
@@ -17,6 +18,7 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.text.Normalizer;
 import java.time.Instant;
 import java.util.Locale;
 import java.util.UUID;
@@ -26,6 +28,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @RequiredArgsConstructor
 public class AuthService {
     private static final String INVALID_CREDENTIALS_MESSAGE = "Invalid credentials";
+    private static final String WEB_ACCESS_DENIED_MESSAGE = "Technician has no access to the web panel";
     private static final int MAX_ATTEMPTS = 5;
     private static final int MAX_ATTEMPTS_PER_IP = 20;
     private static final long WINDOW_SECONDS = 15 * 60;
@@ -59,6 +62,21 @@ public class AuthService {
         AuthenticatedUser user = matchingUsers.getFirst();
         registerDevice(user.getUserId());
         return new LoginResponseDTO(jwtService.generateToken(user), "Bearer", user.isFirstAccess());
+    }
+
+    public void ensureWebAccess(String email) {
+        boolean technician = authUserRepository.findActiveByEmail(email).stream().anyMatch(this::isTechnician);
+        if (technician) {
+            registerAccess(email, "FALHA");
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, WEB_ACCESS_DENIED_MESSAGE);
+        }
+    }
+
+    private boolean isTechnician(AuthUser authUser) {
+        String role = Normalizer.normalize(authUser.getRole().getName(), Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "")
+                .toUpperCase(Locale.ROOT);
+        return role.equals("TECNICO") || role.equals("TECHNICIAN");
     }
 
     public void changePassword(UUID employeeId, Long companyId, ChangePasswordDTO dto) {

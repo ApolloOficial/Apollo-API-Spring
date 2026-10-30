@@ -73,7 +73,7 @@ public class SecurityConfig {
                         // linha o Spring Security rejeita o proprio preflight com 401/403 antes de o
                         // navegador enviar o DELETE/POST/PUT/PATCH real -> vira "erro de CORS".
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .requestMatchers("/api/v1/auth/login").permitAll()
+                        .requestMatchers("/api/v1/auth/login", "/api/v1/auth/web-access").permitAll()
                         .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
                         .requestMatchers(swaggerEnabled
                                 ? new String[] {"/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**", "/v3/api-docs.yaml"}

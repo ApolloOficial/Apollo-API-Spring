@@ -13,6 +13,7 @@ import org.apollo.api.dto.ChangePasswordDTO;
 import org.apollo.api.dto.LoginRequestDTO;
 import org.apollo.api.dto.LoginResponseDTO;
 import org.apollo.api.dto.MeDTO;
+import org.apollo.api.dto.WebAccessRequestDTO;
 import org.apollo.api.exception.ErrorResponse;
 import org.apollo.api.security.TenantContext;
 import org.apollo.api.service.AuthService;
@@ -40,6 +41,19 @@ public class AuthController {
     })
     public LoginResponseDTO login(@Valid @RequestBody LoginRequestDTO request) {
         return authService.login(request);
+    }
+
+    @PostMapping("/web-access")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Operation(summary = "Checks whether the e-mail may use the web panel (technicians are web-blocked)")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "E-mail allowed to proceed to login"),
+            @ApiResponse(responseCode = "403", description = "Technician has no access to the web panel",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(value = "{\"status\": 403, \"message\": \"Technician has no access to the web panel\"}")))
+    })
+    public void checkWebAccess(@Valid @RequestBody WebAccessRequestDTO request) {
+        authService.ensureWebAccess(request.getEmail());
     }
 
     @GetMapping("/me")
