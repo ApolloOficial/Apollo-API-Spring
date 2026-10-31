@@ -1,4 +1,5 @@
 package org.apollo.api.recovery;
+import org.springframework.security.config.Customizer;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -15,6 +16,7 @@ public class RecoverySecurityConfig {
     @Order(1)
     SecurityFilterChain recoverySecurityFilterChain(HttpSecurity http) throws Exception {
         return http.securityMatcher("/api/v1/mobile/auth/**")
+                .cors(Customizer.withDefaults())
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authorize -> authorize.anyRequest().permitAll())
