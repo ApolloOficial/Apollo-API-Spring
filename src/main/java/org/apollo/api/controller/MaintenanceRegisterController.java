@@ -87,6 +87,13 @@ public class MaintenanceRegisterController {
         return service.cancel(id, dto);
     }
 
+    @PostMapping("/{id}/cancellation-request")
+    @Operation(summary = "Technician asks the operator to cancel the order")
+    public MaintenanceRegisterDTO requestCancellation(@PathVariable Long id,
+                                                     @Valid @RequestBody MaintenanceCancellationRequestDTO dto) {
+        return service.requestCancellation(id, dto);
+    }
+
     @GetMapping("/{id}/parts")
     @Operation(summary = "Parts consumed by the order")
     public List<MaintenancePartDTO> parts(@PathVariable Long id) {

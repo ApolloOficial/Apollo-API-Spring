@@ -17,5 +17,5 @@ public record MaintenanceRegisterDTO(Long id, Long parentMaintenanceId, Long war
                                      LocalDateTime concludedAt,
                                      LocalDateTime cancelledAt, String cancellationReason,
                                      BigDecimal estimatedCost, BigDecimal laborCost, BigDecimal partsCost,
-                                     BigDecimal totalCost) {
+                                     BigDecimal totalCost, String cancellationRequestReason) {
 }

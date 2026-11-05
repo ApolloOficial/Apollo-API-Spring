@@ -31,6 +31,25 @@ public class DbProcedures {
 
     private final JdbcTemplate jdbc;
 
+    public void requestCancellation(Long maintenanceId, UUID operatorId, String title, String body) {
+        jdbc.update("""
+                INSERT INTO notification (employee_id, maintenance_register_id, type, title, body)
+                VALUES (?, ?, 'CANCELLATION_REQUESTED', ?, ?)
+                ON CONFLICT (maintenance_register_id, employee_id, type) DO UPDATE
+                   SET title = EXCLUDED.title, body = EXCLUDED.body, is_read = false, read_at = NULL,
+                       push_status = 'PENDING', push_error = NULL, push_sent_at = NULL, created_at = now()
+                """, operatorId, maintenanceId, title, body);
+    }
+
+    public String cancellationRequestBody(Long maintenanceId) {
+        List<String> bodies = jdbc.queryForList("""
+                SELECT body FROM notification
+                 WHERE maintenance_register_id = ? AND type = 'CANCELLATION_REQUESTED'
+                 ORDER BY created_at DESC LIMIT 1
+                """, String.class, maintenanceId);
+        return bodies.isEmpty() ? null : bodies.get(0);
+    }
+
     public static LocalDate today() {
         return LocalDate.now(ZONE);
     }
