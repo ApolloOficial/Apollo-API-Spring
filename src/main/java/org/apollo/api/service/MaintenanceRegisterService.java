@@ -39,6 +39,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.time.ZoneOffset;
 
 /**
  * Ordens de servico. Abrir, iniciar, concluir e cancelar passam pelas procedures do banco
@@ -58,6 +59,13 @@ public class MaintenanceRegisterService {
     private final DbProcedures procedures;
     private final TenantContext tenantContext;
     private final TrackingBusinessEvents tracking;
+
+    private LocalDateTime openingTimeInSaoPaulo(LocalDateTime value) {
+        return value == null ? null
+                : value.atOffset(ZoneOffset.UTC)
+                .atZoneSameInstant(DbProcedures.ZONE)
+                .toLocalDateTime();
+    }
 
     @Transactional(readOnly = true)
     public Page<MaintenanceRegisterDTO> findAll(Long id, UUID technicianId, Long maintenanceTypeId,
@@ -101,7 +109,7 @@ public class MaintenanceRegisterService {
         List<MaintenanceChainDTO> chain = new java.util.ArrayList<>();
         Map<Long, List<Long>> paths = new HashMap<>();
         paths.put(root.getId(), List.of(root.getId()));
-        chain.add(new MaintenanceChainDTO(root.getId(), null, root.getMaintenanceStatus(), root.getOpeningDt(),
+        chain.add(new MaintenanceChainDTO(root.getId(), null, root.getMaintenanceStatus(), openingTimeInSaoPaulo(root.getOpeningDt()),
                 1, paths.get(root.getId())));
 
         List<Long> level = List.of(root.getId());
@@ -117,7 +125,7 @@ public class MaintenanceRegisterService {
                 path.add(child.getId());
                 paths.put(child.getId(), path);
                 chain.add(new MaintenanceChainDTO(child.getId(), parentId, child.getMaintenanceStatus(),
-                        child.getOpeningDt(), path.size(), path));
+                        openingTimeInSaoPaulo(child.getOpeningDt()), path.size(), path));
                 next.add(child.getId());
             }
             level = next;
@@ -276,7 +284,7 @@ public class MaintenanceRegisterService {
                 inverter != null ? inverter.getCompanyUnit().getId() : null,
                 m.getMaintenanceType().getId(), m.getMaintenanceType().getName(),
                 m.getTechnician().getId(), m.getTechnician().getFullName(), m.getCreatedBy().getId(),
-                m.getTechnicalReport(), m.getMaintenanceStatus(), overdue, m.getOpeningDt(), m.getDueDate(),
+                m.getTechnicalReport(), m.getMaintenanceStatus(), overdue, openingTimeInSaoPaulo(m.getOpeningDt()), m.getDueDate(),
                 m.getStartedAt(), m.getConcludedAt(), m.getCancelledAt(), m.getCancellationReason(), m.getEstimatedCost(),
                 m.getLaborCost(), partsCost, labor.add(partsCost));
     }
