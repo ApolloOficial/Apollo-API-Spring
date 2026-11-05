@@ -3,6 +3,7 @@ package org.apollo.api.service;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import org.apollo.api.dto.MaintenanceCancelDTO;
+import org.apollo.api.dto.MaintenanceCancellationRequestDTO;
 import org.apollo.api.dto.MaintenanceChainDTO;
 import org.apollo.api.dto.MaintenanceCompleteDTO;
 import org.apollo.api.dto.MaintenanceCreateDTO;
@@ -59,6 +60,18 @@ public class MaintenanceRegisterService {
     private final DbProcedures procedures;
     private final TenantContext tenantContext;
     private final TrackingBusinessEvents tracking;
+
+    private static final String CANCELLATION_PREFIX = "Motivo informado pelo técnico: ";
+
+    private String cancellationRequestReason(MaintenanceRegister m) {
+        if (m.getMaintenanceStatus() != MaintenanceStatusEnum.ABERTA
+                && m.getMaintenanceStatus() != MaintenanceStatusEnum.EM_ANDAMENTO) {
+            return null;
+        }
+        String body = procedures.cancellationRequestBody(m.getId());
+        if (body == null) return null;
+        return body.startsWith(CANCELLATION_PREFIX) ? body.substring(CANCELLATION_PREFIX.length()) : body;
+    }
 
     private LocalDateTime openingTimeInSaoPaulo(LocalDateTime value) {
         return value == null ? null
@@ -166,6 +179,21 @@ public class MaintenanceRegisterService {
     public MaintenanceRegisterDTO cancel(Long id, MaintenanceCancelDTO dto) {
         findRegister(id);
         procedures.cancelMaintenance(id, tenantContext.getUserId(), dto.reason());
+        return reload(id);
+    }
+
+    /** Tecnico responsavel pede ao operador que abriu a OS para cancela-la. */
+    public MaintenanceRegisterDTO requestCancellation(Long id, MaintenanceCancellationRequestDTO dto) {
+        MaintenanceRegister register = findRegister(id);
+        requireAssignedTechnician(register);
+        if (register.getMaintenanceStatus() != MaintenanceStatusEnum.ABERTA
+                && register.getMaintenanceStatus() != MaintenanceStatusEnum.EM_ANDAMENTO) {
+            throw new BusinessRuleException("Only open or in progress service orders can be cancelled");
+        }
+        String title = "Cancelamento solicitado na OS " + String.format("%05d", id);
+        String body = CANCELLATION_PREFIX + dto.reason().trim();
+        procedures.requestCancellation(id, register.getCreatedBy().getId(), title,
+                body.length() > 500 ? body.substring(0, 500) : body);
         return reload(id);
     }
 
@@ -285,8 +313,9 @@ public class MaintenanceRegisterService {
                 m.getMaintenanceType().getId(), m.getMaintenanceType().getName(),
                 m.getTechnician().getId(), m.getTechnician().getFullName(), m.getCreatedBy().getId(),
                 m.getTechnicalReport(), m.getMaintenanceStatus(), overdue, openingTimeInSaoPaulo(m.getOpeningDt()), m.getDueDate(),
-                m.getStartedAt(), m.getConcludedAt(), m.getCancelledAt(), m.getCancellationReason(), m.getEstimatedCost(),
-                m.getLaborCost(), partsCost, labor.add(partsCost));
+                openingTimeInSaoPaulo(m.getStartedAt()), openingTimeInSaoPaulo(m.getConcludedAt()),
+                openingTimeInSaoPaulo(m.getCancelledAt()), m.getCancellationReason(), m.getEstimatedCost(),
+                m.getLaborCost(), partsCost, labor.add(partsCost), cancellationRequestReason(m));
     }
 
     private MaintenancePartDTO toPartDTO(MaintenancePart p) {

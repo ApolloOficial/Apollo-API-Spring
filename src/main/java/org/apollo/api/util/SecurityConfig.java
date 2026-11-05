@@ -127,6 +127,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PATCH, "/api/v1/maintenance-registers/*/start",
                                 "/api/v1/maintenance-registers/*/complete").hasRole(TECHNICIAN)
                         .requestMatchers(HttpMethod.PATCH, "/api/v1/maintenance-registers/*/cancel").hasRole(OPERATOR)
+                        .requestMatchers(HttpMethod.POST, "/api/v1/maintenance-registers/*/cancellation-request").hasRole(TECHNICIAN)
                         .requestMatchers(HttpMethod.GET, "/api/v1/maintenance-registers/**").hasAnyRole(MANAGER, OPERATOR, ANALYST, TECHNICIAN)
 
                         // Realocacoes: Operador sugere; Gerente aprova/rejeita e conclui.
